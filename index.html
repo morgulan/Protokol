@@ -19,34 +19,12 @@ button:hover{background:#777}
 .hidden{display:none}
 .apparow{border:1px solid #555;padding:10px;margin-top:10px;border-radius:6px}
 footer{text-align:center;color:#aaa;font-size:12px}
-.admin{color:#00ff99;text-align:center;font-weight:bold}
 </style>
 </head>
 
 <body>
-
-<!-- 🔐 SECURITY -->
-<div class="container" id="security">
-  <div class="section">
-    <h2 style="text-align:center">🔒 Security</h2>
-    <label>Unesi kod</label>
-    <input type="password" id="secCode">
-    <button onclick="checkAccess()">Ulaz</button>
-    <p id="secErr" style="color:red;text-align:center"></p>
-  </div>
-</div>
-
-<!-- APP -->
-<div class="container hidden" id="app">
-
+<div class="container">
 <h1 style="text-align:center">Protokol</h1>
-
-<!-- ADMIN PANEL -->
-<div class="section hidden" id="adminPanel">
-  <div class="admin">ADMIN MODE ACTIVE</div>
-  <label>Upload Excel baze</label>
-  <input type="file" accept=".xls,.xlsx">
-</div>
 
 <div class="section">
 <button onclick="addGroup()">➕ Dodaj grupu aparata</button>
@@ -59,30 +37,11 @@ footer{text-align:center;color:#aaa;font-size:12px}
 <h3>Generirani tekst</h3>
 <textarea id="output" rows="25"></textarea>
 </div>
-
-<footer>verzija 13.1.26</footer>
 </div>
 
+<footer>verzija 13.1.26</footer>
+
 <script>
-/* ================= SECURITY ================= */
-
-function checkAccess(){
- const c=document.getElementById("secCode").value;
- const e=document.getElementById("secErr");
- if(c==="1"){
-  security.classList.add("hidden");
-  app.classList.remove("hidden");
- }
- else if(c==="0456"){
-  security.classList.add("hidden");
-  app.classList.remove("hidden");
-  adminPanel.classList.remove("hidden");
- }
- else{
-  e.textContent="Pogrešan kod";
- }
-}
-
 /* ---------------- DATA ---------------- */
 
 const modelsByCategory={
@@ -143,7 +102,7 @@ function addGroup(){
  </select>
 
  <label>Model</label>
- <select class="model"></select>
+ <select class="model"><option></option></select>
 
  <div class="aparati"></div>
 
@@ -226,8 +185,10 @@ function renderAparati(inp){
 
 function showSoftCat(sel){
  const row=sel.parentElement;
- row.querySelectorAll("label,select").forEach((e,i)=>{
-  if(i>2) e.classList.add("hidden");
+ row.querySelectorAll("label,select").forEach(e=>{
+  if(e!==sel && e.tagName==="LABEL" || e.tagName==="SELECT"){
+   e.classList.add("hidden");
+  }
  });
  row.querySelectorAll("label")[3].classList.remove("hidden");
  row.querySelectorAll("select")[1].classList.remove("hidden");
