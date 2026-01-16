@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+<meta charset="UTF-8">
+<title>Protokol</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body{margin:0;background:#000;color:#fff;font-family:Arial}
+.container{max-width:1000px;margin:auto;padding:20px}
+.section{background:#1e1e1e;padding:15px;border-radius:10px;margin-bottom:20px}
+.group{border:1px solid #444;padding:15px;border-radius:10px;margin-bottom:20px}
+label{display:block;margin-top:8px}
+input,select,textarea,button{
+  width:100%;padding:8px;margin-top:4px;
+  background:#333;color:#fff;border:none;border-radius:6px
+}
+button{background:#555;font-weight:bold;cursor:pointer}
+button:hover{background:#777}
+.hidden{display:none}
+.apparow{border:1px solid #555;padding:10px;margin-top:10px;border-radius:6px}
+footer{text-align:center;color:#aaa;font-size:12px}
+.admin{color:#00ff99;text-align:center;font-weight:bold}
+</style>
+</head>
+
+<body>
+
+<!-- 🔐 SECURITY -->
+<div class="container" id="security">
+  <div class="section">
+    <h2 style="text-align:center">🔒 Security</h2>
+    <label>Unesi kod</label>
+    <input type="password" id="secCode">
+    <button onclick="checkAccess()">Ulaz</button>
+    <p id="secErr" style="color:red;text-align:center"></p>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="container hidden" id="app">
+
+<h1 style="text-align:center">Protokol</h1>
+
+<!-- ADMIN PANEL -->
+<div class="section hidden" id="adminPanel">
+  <div class="admin">ADMIN MODE ACTIVE</div>
+  <label>Upload Excel baze</label>
+  <input type="file" accept=".xls,.xlsx">
+</div>
+
+<div class="section">
+<button onclick="addGroup()">➕ Dodaj grupu aparata</button>
+<button onclick="generateText()">📄 Generiraj sav tekst</button>
+</div>
+
+<div id="groups"></div>
+
+<div class="section hidden" id="outBox">
+<h3>Generirani tekst</h3>
+<textarea id="output" rows="25"></textarea>
+</div>
+
+<footer>verzija 13.1.26</footer>
+</div>
+
+<script>
+/* ================= SECURITY ================= */
+
+function checkAccess(){
+ const c=document.getElementById("secCode").value;
+ const e=document.getElementById("secErr");
+ if(c==="1"){
+  security.classList.add("hidden");
+  app.classList.remove("hidden");
+ }
+ else if(c==="0456"){
+  security.classList.add("hidden");
+  app.classList.remove("hidden");
+  adminPanel.classList.remove("hidden");
+ }
+ else{
+  e.textContent="Pogrešan kod";
+ }
+}
+
+/* ---------------- DATA ---------------- */
+
+const modelsByCategory={
+ "Premier":["EGT-VS5-4","EGT-VS6-4","EGT-VS8","EGT-VS9"],
+ "G-Series":["EGT-VS21","EGT-VS22","EGT-VS23","EGT-VS24","EGT-VS25","EGT-VS26","EGT-VS27"],
+ "Supreme":["EGT-VS41","EGT-VS42","EGT-VS43"]
+};
+
+const softwareData={
+ "3":{
+  "Collection":[
+   "E3_C_Fruits-2_R6.2_358",
+   "E3_C_Green_R6.2_358",
+   "E3_C_Red_R6.2_358",
+   "E3_C_Union_R6.2_358",
+   "E3_C_Orange_R6.2_360",
+   "E3_C_Gold_R7.2_410"
+  ],
+  "Power":[
+   "E3_P_Purple_R8_413",
+   "E3_P_Green_R8_432",
+   "E3_P_Fruits_RB.8_417"
+  ],
+  "General":[
+   "E3_G_Red_R8_422",
+   "E3_G_Fruits_R8_415",
+   "E3_G_Green_R8_429",
+   "E3_G_Green_R8B.2_501"
+  ]
+ },
+ "4":{}
+};
+
+const ppcVersions=[
+ "PPC2_8_148","PPC2_10_189","PPC3_G2_13_332","PPC3_G3_13_361","PPC3_G3_14_372"
+];
+
+let groupCount=0;
+
+/* ---------------- GROUP ---------------- */
+
+function addGroup(){
+ groupCount++;
+ const g=document.createElement("div");
+ g.className="group";
+ g.innerHTML=`
+ <h3>Grupa ${groupCount}</h3>
+
+ <label>Broj aparata</label>
+ <input type="number" min="1" onchange="renderAparati(this)">
+
+ <label>Kategorija</label>
+ <select onchange="updateModels(this)">
+  <option value="">-- odaberi --</option>
+  <option>Premier</option>
+  <option>G-Series</option>
+  <option>Supreme</option>
+ </select>
+
+ <label>Model</label>
+ <select class="model"></select>
+
+ <div class="aparati"></div>
+
+ <hr>
+
+ <label>Bill Acceptor</label>
+ <select onchange="toggle(this)">
+  <option>Ne</option><option>Da</option>
+ </select>
+ <select class="hidden dep">
+  <option value="">MEI / JCM</option>
+  <option>MEI</option><option>JCM</option>
+ </select>
+ <input type="number" class="hidden dep" placeholder="Broj komada">
+
+ <label>Printer</label>
+ <select onchange="toggle(this)">
+  <option>Ne</option><option>Da</option>
+ </select>
+ <select class="hidden dep">
+  <option>Ithaca</option><option>Ithaca Edge</option><option>Gen2</option><option>Gen5</option>
+ </select>
+ <input type="number" class="hidden dep" placeholder="Broj komada">
+
+ <label>Server</label>
+ <select onchange="toggleServer(this)">
+  <option>Ne</option><option>Da</option>
+ </select>
+
+ <div class="server hidden">
+  <label>JPSN</label><input>
+  <label>Verzija (PPC)</label>
+  <select>${ppcVersions.map(p=>`<option>${p}</option>`).join("")}</select>
+
+  <h4>Mini</h4>
+  <input placeholder="Visible"><input placeholder="Hidden"><input placeholder="Min bet">
+  <h4>Mid</h4>
+  <input placeholder="Visible"><input placeholder="Hidden"><input placeholder="Min bet">
+  <h4>Super</h4>
+  <input placeholder="Visible"><input placeholder="Hidden"><input placeholder="Min bet">
+ </div>
+ `;
+ document.getElementById("groups").appendChild(g);
+}
+
+/* ---------------- APARATI ---------------- */
+
+function renderAparati(inp){
+ const box=inp.parentElement.querySelector(".aparati");
+ box.innerHTML="";
+ for(let i=1;i<=inp.value;i++){
+  box.innerHTML+=`
+  <div class="apparow">
+   <h4>Aparat ${i}</h4>
+
+   <label>Serijski broj</label><input>
+   <label>Exciter</label><input>
+
+   <label>Exciter Software</label>
+   <select onchange="showSoftCat(this)">
+    <option value="">--</option>
+    <option value="3">3</option>
+    <option value="4">4</option>
+   </select>
+
+   <label class="hidden">Software kategorija</label>
+   <select class="hidden" onchange="showSoftList(this)">
+    <option>Collection</option>
+    <option>Power</option>
+    <option>General</option>
+   </select>
+
+   <label class="hidden">Software</label>
+   <select class="hidden"></select>
+  </div>`;
+ }
+}
+
+/* ---------------- SOFTWARE ---------------- */
+
+function showSoftCat(sel){
+ const row=sel.parentElement;
+ row.querySelectorAll("label,select").forEach((e,i)=>{
+  if(i>2) e.classList.add("hidden");
+ });
+ row.querySelectorAll("label")[3].classList.remove("hidden");
+ row.querySelectorAll("select")[1].classList.remove("hidden");
+}
+
+function showSoftList(sel){
+ const row=sel.parentElement;
+ const exc=row.querySelectorAll("select")[0].value;
+ const list=row.querySelectorAll("select")[2];
+ list.innerHTML="";
+ (softwareData[exc]?.[sel.value]||[]).forEach(s=>{
+  const o=document.createElement("option");
+  o.textContent=s;list.appendChild(o);
+ });
+ row.querySelectorAll("label")[4].classList.remove("hidden");
+ list.classList.remove("hidden");
+}
+
+/* ---------------- HELPERS ---------------- */
+
+function updateModels(sel){
+ const m=sel.parentElement.querySelector(".model");
+ m.innerHTML="";
+ (modelsByCategory[sel.value]||[]).forEach(v=>{
+  const o=document.createElement("option");
+  o.textContent=v;m.appendChild(o);
+ });
+}
+
+function toggle(sel){
+ const deps=sel.parentElement.querySelectorAll(".dep");
+ deps.forEach(d=>d.classList.toggle("hidden",sel.value!=="Da"));
+}
+
+function toggleServer(sel){
+ sel.parentElement.querySelector(".server").classList.toggle("hidden",sel.value!=="Da");
+}
+
+/* ---------------- OUTPUT ---------------- */
+
+function generateText(){
+ let t="";
+ document.querySelectorAll(".group").forEach((g,i)=>{
+  t+=`Grupa ${i+1}\n`;
+  g.querySelectorAll(".apparow").forEach((a,j)=>{
+   const i=a.querySelectorAll("input,select");
+   t+=`Aparat ${j+1}:\n`;
+   t+=`  Serijski broj: ${i[0].value}\n`;
+   t+=`  Exciter: ${i[1].value}\n`;
+   t+=`  Exciter Software: ${i[2].value}\n`;
+   if(i[3] && i[3].value)
+    t+=`  Software kategorija: ${i[3].value}\n  Software: ${i[4].value}\n`;
+  });
+  t+="\n";
+ });
+ document.getElementById("output").value=t;
+ document.getElementById("outBox").classList.remove("hidden");
+}
+</script>
+</body>
+</html>
