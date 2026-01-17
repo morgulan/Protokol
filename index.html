@@ -12,7 +12,6 @@
   --card2:#10161f;
   --muted:#9fb0c3;
   --text:#e8f0ff;
-  --line:#243244;
 
   --accent:#6ee7ff;
   --good:#2ee59d;
@@ -32,24 +31,20 @@ body{
 }
 
 .container{max-width:1050px;margin:auto;padding:20px}
-
 .section{
   background:linear-gradient(180deg, rgba(255,255,255,.04), transparent 55%), var(--card);
   border:1px solid rgba(110,231,255,.08);
   padding:16px;border-radius:14px;margin-bottom:16px;
   box-shadow:0 10px 30px rgba(0,0,0,.35);
 }
-
 .group{
   border:1px solid rgba(255,255,255,.08);
   background:linear-gradient(180deg, rgba(255,255,255,.03), transparent 55%), var(--card2);
   padding:16px;border-radius:14px;margin-bottom:16px;
 }
-
 h1{margin:8px 0 18px 0;letter-spacing:.3px;text-align:center}
 h3{margin:0 0 12px 0}
 h4{margin:12px 0 6px 0;color:var(--muted)}
-
 label{display:block;margin-top:10px;color:var(--muted);font-size:13px}
 
 input,select,textarea,button{
@@ -63,7 +58,7 @@ input,select,textarea,button{
   outline:none;
   box-sizing:border-box;
 }
-
+textarea{resize:vertical;min-height:90px}
 input:focus,select:focus,textarea:focus{
   border-color:rgba(110,231,255,.55);
   box-shadow:0 0 0 4px rgba(110,231,255,.10);
@@ -75,14 +70,30 @@ button{
   font-weight:800;
   cursor:pointer;
   display:flex;gap:10px;align-items:center;justify-content:center;
-  transition:transform .08s ease, border-color .12s ease;
+  transition:transform .08s ease, border-color .12s ease, filter .12s ease;
 }
 button:hover{transform:translateY(-1px);border-color:rgba(110,231,255,.45)}
 button:active{transform:translateY(0)}
+button.ghost{
+  background:transparent;
+  border:1px solid rgba(255,255,255,.14);
+  font-weight:800;
+}
+button.danger{
+  background:linear-gradient(180deg, rgba(255,92,122,.18), rgba(255,92,122,.06));
+  border-color:rgba(255,92,122,.35);
+}
+button.danger:hover{filter:brightness(1.08)}
+button.small{
+  width:auto;
+  padding:8px 10px;
+  margin-top:0;
+  border-radius:12px;
+  font-weight:900;
+}
 
 .btnRow{display:flex;gap:10px;flex-wrap:wrap}
-.btnRow button{flex:1;min-width:220px}
-
+.btnRow button{flex:1;min-width:200px}
 .hidden{display:none}
 
 .apparow{
@@ -111,13 +122,36 @@ button:active{transform:translateY(0)}
   border:1px solid rgba(110,231,255,.25);
 }
 .smallNote{color:var(--muted);font-size:12px;margin-top:4px}
-
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 @media (max-width: 820px){ .grid2{grid-template-columns:1fr} }
-
 hr{border:0;border-top:1px solid rgba(255,255,255,.08);margin:16px 0}
-
 footer{text-align:center;color:#7f92a8;font-size:12px;margin-top:18px}
+
+/* Validation */
+.invalid{
+  border-color:rgba(255,92,122,.85) !important;
+  box-shadow:0 0 0 4px rgba(255,92,122,.12) !important;
+}
+
+/* Toast */
+#toast{
+  position:fixed;
+  left:50%;
+  bottom:18px;
+  transform:translateX(-50%);
+  z-index:9999;
+  background:rgba(10,14,20,.92);
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:14px;
+  padding:10px 12px;
+  display:none;
+  min-width:280px;
+  max-width:92vw;
+  box-shadow:0 12px 40px rgba(0,0,0,.45);
+}
+#toast .row{display:flex;align-items:flex-start;gap:10px}
+#toast .msg{color:var(--text);font-weight:800;font-size:13px;line-height:1.25}
+#toast .sub{color:var(--muted);font-weight:700;font-size:12px;margin-top:2px}
 </style>
 </head>
 
@@ -131,7 +165,7 @@ footer{text-align:center;color:#7f92a8;font-size:12px;margin-top:18px}
         <div class="icon">⚡</div>
         <div>
           <h3 style="margin:0">Unos podataka</h3>
-          <div class="smallNote">Grupe • Aparati • EX2/EX3/EX4 software • Oprema • Server</div>
+          <div class="smallNote">Auto-save uključen • Grupe • Aparati • EX2/EX3/EX4 • Oprema • Server • UCAS • KODOVI</div>
         </div>
       </div>
       <span class="badge warn">🔴 Live</span>
@@ -140,17 +174,44 @@ footer{text-align:center;color:#7f92a8;font-size:12px;margin-top:18px}
     <div class="btnRow" style="margin-top:12px">
       <button onclick="addGroup()">➕ Dodaj grupu</button>
       <button onclick="generateText()">📄 Generiraj tekst</button>
+      <button class="ghost" onclick="copyOutput()">📋 Kopiraj tekst</button>
+      <button class="ghost" onclick="saveState()">💾 Spremi</button>
+      <button class="ghost" onclick="loadState()">📂 Učitaj</button>
+      <button class="danger" onclick="clearAll()">🧹 Očisti sve</button>
+    </div>
+
+    <div class="smallNote" style="margin-top:10px">
+      Spremanje se radi lokalno (u pregledniku). Ne šalje ništa na internet.
     </div>
   </div>
 
   <div id="groups"></div>
 
   <div class="section hidden" id="outBox">
-    <h3>📄 Generirani tekst</h3>
-    <textarea id="output" rows="25"></textarea>
+    <div class="titleRow">
+      <div class="left">
+        <div class="icon">📄</div>
+        <div>
+          <h3 style="margin:0">Generirani tekst</h3>
+          <div class="smallNote">Klikni “Kopiraj tekst” za brzo lijepljenje u protokol.</div>
+        </div>
+      </div>
+      <span class="badge good">✅ Ready</span>
+    </div>
+    <textarea id="output" rows="25" style="margin-top:12px"></textarea>
   </div>
 
   <footer>verzija 13.1.26</footer>
+</div>
+
+<div id="toast">
+  <div class="row">
+    <div id="toastIcon" class="badge warn">⚠️</div>
+    <div>
+      <div id="toastMsg" class="msg">Poruka</div>
+      <div id="toastSub" class="sub"></div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -193,7 +254,7 @@ const ex2Software = [
 ];
 
 /* ------------------------------
-   EX3 + EX4: kategorije + software (dropdown)
+   EX3 + EX4: kategorije + software
 --------------------------------*/
 const softwareData = {
   "3": {
@@ -280,6 +341,33 @@ const softwareData = {
 };
 
 /* ------------------------------
+   Toast
+--------------------------------*/
+let toastTimer = null;
+function toast(msg, sub = "", type = "warn"){
+  const el = document.getElementById("toast");
+  const icon = document.getElementById("toastIcon");
+  const m = document.getElementById("toastMsg");
+  const s = document.getElementById("toastSub");
+  m.textContent = msg;
+  s.textContent = sub;
+
+  icon.className = "badge " + (type === "good" ? "good" : type === "bad" ? "bad" : "warn");
+  icon.textContent = type === "good" ? "✅" : type === "bad" ? "⛔" : "⚠️";
+
+  el.style.display = "block";
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>{ el.style.display = "none"; }, 2600);
+}
+
+/* ------------------------------
+   Validation helpers
+--------------------------------*/
+function clearInvalid(){ document.querySelectorAll(".invalid").forEach(el=>el.classList.remove("invalid")); }
+function markInvalid(el){ if(el) el.classList.add("invalid"); }
+function reqValue(el){ return !!(el && (el.value || "").trim()); }
+
+/* ------------------------------
    UI helper: badge za Da/Ne
 --------------------------------*/
 function updateStatusBadge(selectEl){
@@ -292,21 +380,21 @@ function updateStatusBadge(selectEl){
   badge.textContent = isYes ? "✅ Da" : "❌ Ne";
 }
 
-/* show/hide helper za "Da/Ne" + dep box */
-function toggleDepBox(selectEl, depBoxSelector){
-  updateStatusBadge(selectEl);
-  const wrap = selectEl.closest(".group") || document;
-  const dep = wrap.querySelector(depBoxSelector);
-  if(!dep) return;
-  dep.classList.toggle("hidden", selectEl.value !== "Da");
-}
-
 /* Bill/Printer (tip + komada) */
 function toggleTwoDeps(selectEl, depClass){
   updateStatusBadge(selectEl);
   const group = selectEl.closest(".group");
-  const deps = group.querySelectorAll(depClass);
-  deps.forEach(d=>d.classList.toggle("hidden", selectEl.value !== "Da"));
+  group.querySelectorAll(depClass).forEach(d=>d.classList.toggle("hidden", selectEl.value !== "Da"));
+  scheduleAutoSave();
+}
+
+/* show/hide helper za "Da/Ne" + dep block by selector */
+function toggleDepBox(selectEl, depSelector){
+  updateStatusBadge(selectEl);
+  const group = selectEl.closest(".group");
+  const dep = group.querySelector(depSelector);
+  if(dep) dep.classList.toggle("hidden", selectEl.value !== "Da");
+  scheduleAutoSave();
 }
 
 /* Server block */
@@ -315,14 +403,68 @@ function toggleServer(selectEl){
   const group = selectEl.closest(".group");
   const serverBox = group.querySelector(".server");
   serverBox.classList.toggle("hidden", selectEl.value !== "Da");
+  scheduleAutoSave();
 }
 
-/* UCAS (na kraju servera) */
+/* UCAS inside server */
 function toggleUCAS(selectEl){
   updateStatusBadge(selectEl);
   const group = selectEl.closest(".group");
   const ucasBox = group.querySelector(".ucasDep");
   ucasBox.classList.toggle("hidden", selectEl.value !== "Da");
+  scheduleAutoSave();
+}
+
+/* ------------------------------
+   SAVE/LOAD (manual + auto)
+--------------------------------*/
+const STORAGE_KEY = "protokol_v13_1_26_state";
+let autoSaveTimer = null;
+
+function scheduleAutoSave(){
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(()=> {
+    try{
+      const data = exportState();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      // bez toasta na svaku promjenu (da ne smeta)
+    }catch(e){}
+  }, 450);
+}
+
+function saveState(){
+  try{
+    const data = exportState();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    toast("Spremljeno", "Podaci su spremljeni u pregledniku.", "good");
+  } catch(e){
+    toast("Greška kod spremanja", String(e?.message || e), "bad");
+  }
+}
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw){
+      toast("Nema spremljenih podataka", "Upiši nešto pa će se auto-spremiti.", "warn");
+      return;
+    }
+    const data = JSON.parse(raw);
+    importState(data);
+    toast("Učitano", "Podaci su vraćeni.", "good");
+  } catch(e){
+    toast("Greška kod učitavanja", String(e?.message || e), "bad");
+  }
+}
+
+function clearAll(){
+  if(!confirm("Očistiti sve grupe i tekst?")) return;
+  document.getElementById("groups").innerHTML = "";
+  document.getElementById("output").value = "";
+  document.getElementById("outBox").classList.add("hidden");
+  groupCount = 0;
+  localStorage.removeItem(STORAGE_KEY);
+  toast("Očišćeno", "Sve je resetirano.", "good");
 }
 
 /* ------------------------------
@@ -330,7 +472,7 @@ function toggleUCAS(selectEl){
 --------------------------------*/
 let groupCount = 0;
 
-function addGroup(){
+function addGroup(prefillData = null){
   groupCount++;
 
   const g = document.createElement("div");
@@ -340,17 +482,19 @@ function addGroup(){
       <div class="left">
         <div class="icon">🎰</div>
         <div>
-          <h3 style="margin:0">Grupa ${groupCount}</h3>
+          <h3 class="groupTitle" style="margin:0">Grupa ${groupCount}</h3>
           <div class="smallNote">Serija + model su zajednički za cijelu grupu</div>
         </div>
       </div>
-      <span class="badge warn">🧩 Unos</span>
+      <div style="display:flex;gap:10px;align-items:center">
+        <button class="small danger" onclick="deleteGroup(this)">🗑️ Obriši grupu</button>
+      </div>
     </div>
 
     <div class="grid2" style="margin-top:10px">
       <div>
         <label>🔢 Broj aparata</label>
-        <input type="number" min="1" onchange="renderAparati(this)">
+        <input class="apCount" type="number" min="0" onchange="renderAparati(this)">
       </div>
 
       <div>
@@ -480,15 +624,41 @@ function addGroup(){
         </div>
       </div>
     </div>
+
+    <hr>
+
+    <h4>🔐 KODOVI</h4>
+    <label>Komentar / napomena</label>
+    <textarea class="codesNote" placeholder="npr. konverzije kodovi 180 dana, ostalo no limit"></textarea>
   `;
 
   document.getElementById("groups").appendChild(g);
 
-  // init badge state (all Ne)
+  // init badges to "Ne"
   g.querySelectorAll('select').forEach(sel=>{
-    if(sel.value === "Ne" && sel.previousElementSibling?.querySelector(".status")){
-      updateStatusBadge(sel);
-    }
+    if(sel.previousElementSibling?.querySelector(".status")) updateStatusBadge(sel);
+  });
+
+  // optional prefill
+  if(prefillData) applyGroupData(g, prefillData);
+
+  reindexGroups();
+  scheduleAutoSave();
+}
+
+function deleteGroup(btn){
+  const g = btn.closest(".group");
+  if(!g) return;
+  g.remove();
+  reindexGroups();
+  scheduleAutoSave();
+  toast("Grupa obrisana", "", "good");
+}
+
+function reindexGroups(){
+  [...document.querySelectorAll(".group")].forEach((g, idx)=>{
+    const title = g.querySelector(".groupTitle");
+    if(title) title.textContent = `Grupa ${idx+1}`;
   });
 }
 
@@ -502,52 +672,98 @@ function updateModels(sel){
     o.textContent = m;
     modelSelect.appendChild(o);
   });
+  scheduleAutoSave();
 }
 
 /* ------------------------------
    APARATI
 --------------------------------*/
-function renderAparati(inp){
+function renderAparati(inp, prefillAparati = null){
   const group = inp.closest(".group");
   const box = group.querySelector(".aparati");
   box.innerHTML = "";
 
-  const n = Number(inp.value || 0);
+  const n = Math.max(0, Number(inp.value || 0));
   for(let i=1;i<=n;i++){
-    box.innerHTML += `
-      <div class="apparow">
-        <h4>🧩 Aparat ${i}</h4>
+    box.appendChild(makeAparatRow(i));
+  }
 
-        <label>Serijski broj</label>
-        <input class="sn" placeholder="Serijski broj aparata">
+  if(Array.isArray(prefillAparati)){
+    const rows = [...group.querySelectorAll(".apparow")];
+    rows.forEach((row, idx)=>{
+      if(prefillAparati[idx]) applyAparatData(row, prefillAparati[idx]);
+    });
+  }
 
-        <label>Broj excitera</label>
-        <input class="exno" placeholder="Broj excitera">
+  scheduleAutoSave();
+}
 
-        <label>⚙️ Exciter</label>
-        <select class="exSel" onchange="onExciterChange(this)">
-          <option value="">--</option>
-          <option value="2">2</option>
-          <option value="3">3</option>
-          <option value="4">4</option>
-        </select>
-
-        <div class="exSoft hidden">
-          <h4 style="margin-top:10px">🧠 Software</h4>
-
-          <label class="softcat-label">Software kategorija</label>
-          <select class="softcat hidden" onchange="showSoftList(this)">
-            <option value="">-- odaberi --</option>
-          </select>
-
-          <label class="softlist-label hidden">Software</label>
-          <select class="softlist hidden">
-            <option value="">-- odaberi --</option>
-          </select>
+function makeAparatRow(index){
+  const wrap = document.createElement("div");
+  wrap.className = "apparow";
+  wrap.innerHTML = `
+    <div class="titleRow">
+      <div class="left">
+        <div class="icon">🧩</div>
+        <div>
+          <h4 class="apTitle" style="margin:0">Aparat ${index}</h4>
+          <div class="smallNote">Serijski broj • broj excitera • exciter • software</div>
         </div>
       </div>
-    `;
-  }
+      <button class="small danger" onclick="deleteAparat(this)">🗑️</button>
+    </div>
+
+    <label>Serijski broj</label>
+    <input class="sn" placeholder="Serijski broj aparata">
+
+    <label>Broj excitera</label>
+    <input class="exno" placeholder="Broj excitera">
+
+    <label>⚙️ Exciter</label>
+    <select class="exSel" onchange="onExciterChange(this)">
+      <option value="">--</option>
+      <option value="2">2</option>
+      <option value="3">3</option>
+      <option value="4">4</option>
+    </select>
+
+    <div class="exSoft hidden">
+      <h4 style="margin-top:10px">🧠 Software</h4>
+
+      <label class="softcat-label">Software kategorija</label>
+      <select class="softcat hidden" onchange="showSoftList(this)">
+        <option value="">-- odaberi --</option>
+      </select>
+
+      <label class="softlist-label hidden">Software</label>
+      <select class="softlist hidden">
+        <option value="">-- odaberi --</option>
+      </select>
+    </div>
+  `;
+  return wrap;
+}
+
+function deleteAparat(btn){
+  const row = btn.closest(".apparow");
+  const group = btn.closest(".group");
+  if(!row || !group) return;
+  row.remove();
+
+  const apCount = group.querySelector(".apCount");
+  const count = group.querySelectorAll(".apparow").length;
+  apCount.value = count;
+
+  reindexAparati(group);
+  scheduleAutoSave();
+  toast("Aparat obrisan", "", "good");
+}
+
+function reindexAparati(group){
+  [...group.querySelectorAll(".apparow")].forEach((r, idx)=>{
+    const t = r.querySelector(".apTitle");
+    if(t) t.textContent = `Aparat ${idx+1}`;
+  });
 }
 
 /* ------------------------------
@@ -574,11 +790,10 @@ function onExciterChange(sel){
   listSel.innerHTML = `<option value="">-- odaberi --</option>`;
   listLabel.textContent = "Software";
 
-  if(!exc) return;
+  if(!exc){ scheduleAutoSave(); return; }
 
   softBox.classList.remove("hidden");
 
-  // EX2: samo jedan dropdown (softlist), bez kategorija
   if(exc === "2"){
     listLabel.classList.remove("hidden");
     listSel.classList.remove("hidden");
@@ -587,10 +802,10 @@ function onExciterChange(sel){
       o.value=s; o.textContent=s;
       listSel.appendChild(o);
     });
+    scheduleAutoSave();
     return;
   }
 
-  // EX3/EX4: kategorija + software
   if(exc === "3" || exc === "4"){
     catLabel.classList.remove("hidden");
     catSel.classList.remove("hidden");
@@ -600,8 +815,11 @@ function onExciterChange(sel){
       o.value=k; o.textContent=k;
       catSel.appendChild(o);
     });
+    scheduleAutoSave();
     return;
   }
+
+  scheduleAutoSave();
 }
 
 function showSoftList(catSel){
@@ -624,23 +842,307 @@ function showSoftList(catSel){
   const show = !!key;
   listLabel.classList.toggle("hidden", !show);
   listSel.classList.toggle("hidden", !show);
+
+  scheduleAutoSave();
 }
 
 /* ------------------------------
-   OUTPUT
+   COPY
+--------------------------------*/
+function copyOutput(){
+  const out = document.getElementById("output");
+  const text = (out?.value || "").trim();
+  if(!text){
+    toast("Nema teksta za kopirati", "Prvo klikni “Generiraj tekst”.", "warn");
+    return;
+  }
+
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(()=>{
+      toast("Kopirano u clipboard", "", "good");
+    }).catch(()=> fallbackCopy(text));
+  } else {
+    fallbackCopy(text);
+  }
+}
+
+function fallbackCopy(text){
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  ta.style.position="fixed";
+  ta.style.left="-9999px";
+  document.body.appendChild(ta);
+  ta.select();
+  try{
+    document.execCommand("copy");
+    toast("Kopirano u clipboard", "", "good");
+  } catch(e){
+    toast("Ne mogu kopirati", "Clipboard blokiran u pregledniku.", "bad");
+  }
+  document.body.removeChild(ta);
+}
+
+/* ------------------------------
+   EXPORT/IMPORT STATE
+--------------------------------*/
+function exportState(){
+  const groups = [...document.querySelectorAll(".group")];
+  return {
+    version: "13.1.26",
+    groups: groups.map(g => collectGroupData(g))
+  };
+}
+
+function importState(state){
+  document.getElementById("groups").innerHTML = "";
+  groupCount = 0;
+
+  const groups = Array.isArray(state?.groups) ? state.groups : [];
+  groups.forEach(gd => addGroup(gd));
+
+  const out = document.getElementById("output");
+  if(out.value.trim()) document.getElementById("outBox").classList.remove("hidden");
+}
+
+function collectGroupData(g){
+  const aparati = [...g.querySelectorAll(".apparow")].map(a => collectAparatData(a));
+  return {
+    apCount: g.querySelector(".apCount")?.value || "",
+    series: g.querySelector(".series")?.value || "",
+    model: g.querySelector(".model")?.value || "",
+
+    billYes: g.querySelector(".billYesNo")?.value || "Ne",
+    billType: g.querySelector(".billType")?.value || "",
+    billCount: g.querySelector(".billCount")?.value || "",
+
+    prnYes: g.querySelector(".prnYesNo")?.value || "Ne",
+    prnType: g.querySelector(".prnType")?.value || "",
+    prnCount: g.querySelector(".prnCount")?.value || "",
+
+    stolYes: g.querySelector(".stolYesNo")?.value || "Ne",
+    stolText: g.querySelector(".stolText")?.value || "",
+
+    postYes: g.querySelector(".postYesNo")?.value || "Ne",
+    postText: g.querySelector(".postText")?.value || "",
+
+    signYes: g.querySelector(".signYesNo")?.value || "Ne",
+    signSN: g.querySelector(".signSN")?.value || "",
+    signMedia: g.querySelector(".signMedia")?.value || "",
+
+    srvYes: g.querySelector(".srvYesNo")?.value || "Ne",
+    srvJpsn: g.querySelector(".srvJpsn")?.value || "",
+    srvPpc: g.querySelector(".srvPpc")?.value || "",
+    miniV: g.querySelector(".miniV")?.value || "",
+    miniH: g.querySelector(".miniH")?.value || "",
+    miniB: g.querySelector(".miniB")?.value || "",
+    midV: g.querySelector(".midV")?.value || "",
+    midH: g.querySelector(".midH")?.value || "",
+    midB: g.querySelector(".midB")?.value || "",
+    supV: g.querySelector(".supV")?.value || "",
+    supH: g.querySelector(".supH")?.value || "",
+    supB: g.querySelector(".supB")?.value || "",
+
+    ucasYes: g.querySelector(".ucasYesNo")?.value || "Ne",
+    ucasText: g.querySelector(".ucasText")?.value || "",
+
+    codesNote: g.querySelector(".codesNote")?.value || "",
+
+    aparati
+  };
+}
+
+function collectAparatData(a){
+  return {
+    sn: a.querySelector(".sn")?.value || "",
+    exno: a.querySelector(".exno")?.value || "",
+    exc: a.querySelector(".exSel")?.value || "",
+    cat: a.querySelector(".softcat")?.value || "",
+    soft: a.querySelector(".softlist")?.value || ""
+  };
+}
+
+function applyGroupData(g, d){
+  g.querySelector(".apCount").value = d.apCount || "";
+  g.querySelector(".series").value = d.series || "";
+  updateModels(g.querySelector(".series"));
+  g.querySelector(".model").value = d.model || "";
+
+  renderAparati(g.querySelector(".apCount"), d.aparati || []);
+
+  const setYesNo = (sel, val) => { sel.value = val || "Ne"; updateStatusBadge(sel); };
+
+  setYesNo(g.querySelector(".billYesNo"), d.billYes);
+  toggleTwoDeps(g.querySelector(".billYesNo"), ".billDep");
+  g.querySelector(".billType").value = d.billType || "";
+  g.querySelector(".billCount").value = d.billCount || "";
+
+  setYesNo(g.querySelector(".prnYesNo"), d.prnYes);
+  toggleTwoDeps(g.querySelector(".prnYesNo"), ".prnDep");
+  g.querySelector(".prnType").value = d.prnType || "";
+  g.querySelector(".prnCount").value = d.prnCount || "";
+
+  setYesNo(g.querySelector(".stolYesNo"), d.stolYes);
+  toggleDepBox(g.querySelector(".stolYesNo"), ".stolDep");
+  g.querySelector(".stolText").value = d.stolText || "";
+
+  setYesNo(g.querySelector(".postYesNo"), d.postYes);
+  toggleDepBox(g.querySelector(".postYesNo"), ".postDep");
+  g.querySelector(".postText").value = d.postText || "";
+
+  setYesNo(g.querySelector(".signYesNo"), d.signYes);
+  toggleDepBox(g.querySelector(".signYesNo"), ".signDep");
+  g.querySelector(".signSN").value = d.signSN || "";
+  g.querySelector(".signMedia").value = d.signMedia || "";
+
+  setYesNo(g.querySelector(".srvYesNo"), d.srvYes);
+  toggleServer(g.querySelector(".srvYesNo"));
+  g.querySelector(".srvJpsn").value = d.srvJpsn || "";
+  g.querySelector(".srvPpc").value = d.srvPpc || "";
+  g.querySelector(".miniV").value = d.miniV || "";
+  g.querySelector(".miniH").value = d.miniH || "";
+  g.querySelector(".miniB").value = d.miniB || "";
+  g.querySelector(".midV").value = d.midV || "";
+  g.querySelector(".midH").value = d.midH || "";
+  g.querySelector(".midB").value = d.midB || "";
+  g.querySelector(".supV").value = d.supV || "";
+  g.querySelector(".supH").value = d.supH || "";
+  g.querySelector(".supB").value = d.supB || "";
+
+  setYesNo(g.querySelector(".ucasYesNo"), d.ucasYes);
+  toggleUCAS(g.querySelector(".ucasYesNo"));
+  g.querySelector(".ucasText").value = d.ucasText || "";
+
+  g.querySelector(".codesNote").value = d.codesNote || "";
+
+  scheduleAutoSave();
+}
+
+function applyAparatData(row, d){
+  row.querySelector(".sn").value = d.sn || "";
+  row.querySelector(".exno").value = d.exno || "";
+  row.querySelector(".exSel").value = d.exc || "";
+  onExciterChange(row.querySelector(".exSel"));
+
+  if(d.exc === "2"){
+    row.querySelector(".softlist").value = d.soft || "";
+  }
+
+  if(d.exc === "3" || d.exc === "4"){
+    row.querySelector(".softcat").value = d.cat || "";
+    showSoftList(row.querySelector(".softcat"));
+    row.querySelector(".softlist").value = d.soft || "";
+  }
+}
+
+/* ------------------------------
+   OUTPUT + VALIDACIJE
 --------------------------------*/
 function generateText(){
-  let t = "";
+  clearInvalid();
 
-  document.querySelectorAll(".group").forEach((g,gi)=>{
+  const groups = [...document.querySelectorAll(".group")];
+  if(groups.length === 0){
+    toast("Nema grupa", "Dodaj barem jednu grupu.", "warn");
+    return;
+  }
+
+  let firstInvalid = null;
+  let errCount = 0;
+
+  groups.forEach((g)=>{
+    const seriesEl = g.querySelector(".series");
+    const modelEl = g.querySelector(".model");
+    const apCountEl = g.querySelector(".apCount");
+
+    if(!reqValue(apCountEl)){ markInvalid(apCountEl); firstInvalid ||= apCountEl; errCount++; }
+    if(!reqValue(seriesEl)){ markInvalid(seriesEl); firstInvalid ||= seriesEl; errCount++; }
+    if(!reqValue(modelEl)){ markInvalid(modelEl); firstInvalid ||= modelEl; errCount++; }
+
+    [...g.querySelectorAll(".apparow")].forEach((a)=>{
+      const sn = a.querySelector(".sn");
+      const exno = a.querySelector(".exno");
+      const exc = a.querySelector(".exSel");
+      const cat = a.querySelector(".softcat");
+      const soft = a.querySelector(".softlist");
+
+      if(!reqValue(sn)){ markInvalid(sn); firstInvalid ||= sn; errCount++; }
+      if(!reqValue(exno)){ markInvalid(exno); firstInvalid ||= exno; errCount++; }
+      if(!reqValue(exc)){ markInvalid(exc); firstInvalid ||= exc; errCount++; }
+
+      const excVal = (exc.value||"").trim();
+      if(excVal === "2"){
+        if(!reqValue(soft)){ markInvalid(soft); firstInvalid ||= soft; errCount++; }
+      }
+      if(excVal === "3" || excVal === "4"){
+        if(!reqValue(cat)){ markInvalid(cat); firstInvalid ||= cat; errCount++; }
+        if(!reqValue(soft)){ markInvalid(soft); firstInvalid ||= soft; errCount++; }
+      }
+    });
+
+    const billYes = g.querySelector(".billYesNo")?.value || "Ne";
+    if(billYes === "Da"){
+      const bt = g.querySelector(".billType");
+      const bc = g.querySelector(".billCount");
+      if(!reqValue(bt)){ markInvalid(bt); firstInvalid ||= bt; errCount++; }
+      if(!reqValue(bc)){ markInvalid(bc); firstInvalid ||= bc; errCount++; }
+    }
+
+    const prnYes = g.querySelector(".prnYesNo")?.value || "Ne";
+    if(prnYes === "Da"){
+      const pt = g.querySelector(".prnType");
+      const pc = g.querySelector(".prnCount");
+      if(!reqValue(pt)){ markInvalid(pt); firstInvalid ||= pt; errCount++; }
+      if(!reqValue(pc)){ markInvalid(pc); firstInvalid ||= pc; errCount++; }
+    }
+
+    const stolYes = g.querySelector(".stolYesNo")?.value || "Ne";
+    if(stolYes === "Da"){
+      const st = g.querySelector(".stolText");
+      if(!reqValue(st)){ markInvalid(st); firstInvalid ||= st; errCount++; }
+    }
+
+    const postYes = g.querySelector(".postYesNo")?.value || "Ne";
+    if(postYes === "Da"){
+      const ps = g.querySelector(".postText");
+      if(!reqValue(ps)){ markInvalid(ps); firstInvalid ||= ps; errCount++; }
+    }
+
+    const signYes = g.querySelector(".signYesNo")?.value || "Ne";
+    if(signYes === "Da"){
+      const ssn = g.querySelector(".signSN");
+      const sm = g.querySelector(".signMedia");
+      if(!reqValue(ssn)){ markInvalid(ssn); firstInvalid ||= ssn; errCount++; }
+      if(!reqValue(sm)){ markInvalid(sm); firstInvalid ||= sm; errCount++; }
+    }
+
+    const srvYes = g.querySelector(".srvYesNo")?.value || "Ne";
+    if(srvYes === "Da"){
+      const jpsn = g.querySelector(".srvJpsn");
+      if(!reqValue(jpsn)){ markInvalid(jpsn); firstInvalid ||= jpsn; errCount++; }
+
+      const ucasYes = g.querySelector(".ucasYesNo")?.value || "Ne";
+      if(ucasYes === "Da"){
+        const ut = g.querySelector(".ucasText");
+        if(!reqValue(ut)){ markInvalid(ut); firstInvalid ||= ut; errCount++; }
+      }
+    }
+  });
+
+  if(errCount){
+    firstInvalid?.scrollIntoView({behavior:"smooth", block:"center"});
+    toast("Nedostaju obavezna polja", `Ispravi označena polja (ukupno: ${errCount}).`, "bad");
+    return;
+  }
+
+  let t = "";
+  groups.forEach((g,gi)=>{
     const series = g.querySelector(".series")?.value || "";
     const model  = g.querySelector(".model")?.value || "";
 
     t += `Grupa ${gi+1}\n`;
-    if(series) t += `Serija: ${series}\n`;
-    if(model)  t += `Model: ${model}\n`;
+    t += `Serija: ${series}\n`;
+    t += `Model: ${model}\n\n`;
 
-    // Aparati
     g.querySelectorAll(".apparow").forEach((a,ai)=>{
       const sn   = a.querySelector(".sn")?.value || "";
       const exno = a.querySelector(".exno")?.value || "";
@@ -654,70 +1156,55 @@ function generateText(){
       t += `  Exciter: ${exc}\n`;
 
       if(exc === "2"){
-        if(soft) t += `  Software: ${soft}\n`;
+        t += `  Software: ${soft}\n`;
       } else if(exc === "3" || exc === "4"){
-        if(cat)  t += `  Software kategorija: ${cat}\n`;
-        if(soft) t += `  Software: ${soft}\n`;
+        t += `  Software kategorija: ${cat}\n`;
+        t += `  Software: ${soft}\n`;
       }
+      t += "\n";
     });
 
-    t += "\nOprema:\n";
+    t += "Oprema:\n";
 
-    // Bill Acceptor
     const billYes = g.querySelector(".billYesNo")?.value || "Ne";
     t += `Bill Acceptor: ${billYes}\n`;
     if(billYes === "Da"){
-      const bt = g.querySelector(".billType")?.value || "";
-      const bc = g.querySelector(".billCount")?.value || "";
-      if(bt) t += `Tip: ${bt}\n`;
-      if(bc) t += `Komada: ${bc}\n`;
+      t += `Tip: ${g.querySelector(".billType")?.value || ""}\n`;
+      t += `Komada: ${g.querySelector(".billCount")?.value || ""}\n`;
     }
 
-    // Printer
     const prnYes = g.querySelector(".prnYesNo")?.value || "Ne";
     t += `Printer: ${prnYes}\n`;
     if(prnYes === "Da"){
-      const pt = g.querySelector(".prnType")?.value || "";
-      const pc = g.querySelector(".prnCount")?.value || "";
-      if(pt) t += `Tip: ${pt}\n`;
-      if(pc) t += `Komada: ${pc}\n`;
+      t += `Tip: ${g.querySelector(".prnType")?.value || ""}\n`;
+      t += `Komada: ${g.querySelector(".prnCount")?.value || ""}\n`;
     }
 
-    // Stolica
     const stolYes = g.querySelector(".stolYesNo")?.value || "Ne";
     t += `Stolica: ${stolYes}\n`;
     if(stolYes === "Da"){
-      const st = g.querySelector(".stolText")?.value || "";
-      if(st) t += `Napomena: ${st}\n`;
+      t += `Napomena: ${g.querySelector(".stolText")?.value || ""}\n`;
     }
 
-    // Postolje
     const postYes = g.querySelector(".postYesNo")?.value || "Ne";
     t += `Postolje: ${postYes}\n`;
     if(postYes === "Da"){
-      const ps = g.querySelector(".postText")?.value || "";
-      if(ps) t += `Napomena: ${ps}\n`;
+      t += `Napomena: ${g.querySelector(".postText")?.value || ""}\n`;
     }
 
-    // Signage
     const signYes = g.querySelector(".signYesNo")?.value || "Ne";
     t += `Signage: ${signYes}\n`;
     if(signYes === "Da"){
-      const ssn = g.querySelector(".signSN")?.value || "";
-      const sm  = g.querySelector(".signMedia")?.value || "";
-      if(ssn) t += `Serijski broj: ${ssn}\n`;
-      if(sm)  t += `Medij: ${sm}\n`;
+      t += `Serijski broj: ${g.querySelector(".signSN")?.value || ""}\n`;
+      t += `Medij: ${g.querySelector(".signMedia")?.value || ""}\n`;
     }
 
-    // Server + UCAS
     const srvYes = g.querySelector(".srvYesNo")?.value || "Ne";
     t += `Server: ${srvYes}\n`;
     if(srvYes === "Da"){
       t += "Server:\n";
-      const jpsn = g.querySelector(".srvJpsn")?.value || "";
-      const ppc  = g.querySelector(".srvPpc")?.value || "";
-      if(jpsn) t += `JPSN: ${jpsn}\n`;
-      if(ppc)  t += `Verzija (PPC): ${ppc}\n`;
+      t += `JPSN: ${g.querySelector(".srvJpsn")?.value || ""}\n`;
+      t += `Verzija (PPC): ${g.querySelector(".srvPpc")?.value || ""}\n`;
 
       t += "Mini:\n";
       t += `  Visible: ${g.querySelector(".miniV")?.value || ""}\n`;
@@ -737,17 +1224,58 @@ function generateText(){
       const ucasYes = g.querySelector(".ucasYesNo")?.value || "Ne";
       t += `UCAS: ${ucasYes}\n`;
       if(ucasYes === "Da"){
-        const ut = g.querySelector(".ucasText")?.value || "";
-        if(ut) t += `Napomena: ${ut}\n`;
+        t += `Napomena: ${g.querySelector(".ucasText")?.value || ""}\n`;
       }
     }
 
-    t += "\n\n";
+    const codes = (g.querySelector(".codesNote")?.value || "").trim();
+    t += `KODOVI:\n`;
+    t += codes ? `${codes}\n` : `-\n`;
+
+    t += "\n----------------------------------------\n\n";
   });
 
-  document.getElementById("output").value = t;
+  document.getElementById("output").value = t.trim();
   document.getElementById("outBox").classList.remove("hidden");
+  toast("Tekst generiran", "Možeš ga kopirati s “Kopiraj tekst”.", "good");
 }
+
+/* ------------------------------
+   Obriši grupu helper
+--------------------------------*/
+function deleteGroup(btn){
+  const g = btn.closest(".group");
+  if(!g) return;
+  g.remove();
+  reindexGroups();
+  scheduleAutoSave();
+  toast("Grupa obrisana", "", "good");
+}
+
+/* ------------------------------
+   AUTO-SAVE: globalni listener
+   (hvata sve input/select/textarea promjene)
+--------------------------------*/
+document.addEventListener("input", (e)=>{
+  const tag = (e.target?.tagName || "").toLowerCase();
+  if(tag === "input" || tag === "select" || tag === "textarea") scheduleAutoSave();
+});
+document.addEventListener("change", (e)=>{
+  const tag = (e.target?.tagName || "").toLowerCase();
+  if(tag === "input" || tag === "select" || tag === "textarea") scheduleAutoSave();
+});
+
+/* Auto-load na start (ako postoji) */
+(function autoLoadOnStart(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      const data = JSON.parse(raw);
+      importState(data);
+      toast("Auto-load", "Vraćeni zadnji spremljeni podaci.", "good");
+    }
+  } catch(e){}
+})();
 </script>
 </body>
 </html>
