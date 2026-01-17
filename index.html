@@ -1,274 +1,751 @@
 <!DOCTYPE html>
 <html lang="hr">
 <head>
-<meta charset="UTF-8">
+<meta charset="UTF-8" />
 <title>Protokol</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
 <style>
-body{margin:0;background:#000;color:#fff;font-family:Arial}
-.container{max-width:1000px;margin:auto;padding:20px}
-.section{background:#1e1e1e;padding:15px;border-radius:10px;margin-bottom:20px}
-.group{border:1px solid #444;padding:15px;border-radius:10px;margin-bottom:20px}
-label{display:block;margin-top:8px}
-input,select,textarea,button{width:100%;padding:8px;margin-top:4px;background:#333;color:#fff;border:none;border-radius:6px}
-button{background:#555;font-weight:bold;cursor:pointer}
-button:hover{background:#777}
+:root{
+  --bg:#0b0f14;
+  --card:#141b24;
+  --card2:#10161f;
+  --muted:#9fb0c3;
+  --text:#e8f0ff;
+  --line:#243244;
+
+  --accent:#6ee7ff;
+  --good:#2ee59d;
+  --warn:#ffd166;
+  --bad:#ff5c7a;
+  --btn:#2a374a;
+}
+
+body{
+  margin:0;
+  background:
+    radial-gradient(1200px 700px at 20% -10%, rgba(110,231,255,.14), transparent 60%),
+    radial-gradient(900px 600px at 110% 10%, rgba(46,229,157,.12), transparent 60%),
+    var(--bg);
+  color:var(--text);
+  font-family:Arial, sans-serif;
+}
+
+.container{max-width:1050px;margin:auto;padding:20px}
+
+.section{
+  background:linear-gradient(180deg, rgba(255,255,255,.04), transparent 55%), var(--card);
+  border:1px solid rgba(110,231,255,.08);
+  padding:16px;border-radius:14px;margin-bottom:16px;
+  box-shadow:0 10px 30px rgba(0,0,0,.35);
+}
+
+.group{
+  border:1px solid rgba(255,255,255,.08);
+  background:linear-gradient(180deg, rgba(255,255,255,.03), transparent 55%), var(--card2);
+  padding:16px;border-radius:14px;margin-bottom:16px;
+}
+
+h1{margin:8px 0 18px 0;letter-spacing:.3px;text-align:center}
+h3{margin:0 0 12px 0}
+h4{margin:12px 0 6px 0;color:var(--muted)}
+
+label{display:block;margin-top:10px;color:var(--muted);font-size:13px}
+
+input,select,textarea,button{
+  width:100%;
+  padding:10px;
+  margin-top:6px;
+  background:#0e141d;
+  color:var(--text);
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:10px;
+  outline:none;
+  box-sizing:border-box;
+}
+
+input:focus,select:focus,textarea:focus{
+  border-color:rgba(110,231,255,.55);
+  box-shadow:0 0 0 4px rgba(110,231,255,.10);
+}
+
+button{
+  background:linear-gradient(180deg, rgba(110,231,255,.18), rgba(110,231,255,.05)), var(--btn);
+  border:1px solid rgba(110,231,255,.25);
+  font-weight:800;
+  cursor:pointer;
+  display:flex;gap:10px;align-items:center;justify-content:center;
+  transition:transform .08s ease, border-color .12s ease;
+}
+button:hover{transform:translateY(-1px);border-color:rgba(110,231,255,.45)}
+button:active{transform:translateY(0)}
+
+.btnRow{display:flex;gap:10px;flex-wrap:wrap}
+.btnRow button{flex:1;min-width:220px}
+
 .hidden{display:none}
-.apparow{border:1px solid #555;padding:10px;margin-top:10px;border-radius:6px}
-footer{text-align:center;color:#aaa;font-size:12px}
+
+.apparow{
+  border:1px solid rgba(255,255,255,.08);
+  background:linear-gradient(180deg, rgba(46,229,157,.05), transparent 55%), #0c121a;
+  padding:12px;margin-top:12px;border-radius:12px;
+}
+
+.badge{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:6px 10px;border-radius:999px;
+  font-size:12px;font-weight:800;
+  border:1px solid rgba(255,255,255,.10);
+  user-select:none;
+}
+.badge.good{background:rgba(46,229,157,.12);border-color:rgba(46,229,157,.30);color:var(--good)}
+.badge.bad{background:rgba(255,92,122,.10);border-color:rgba(255,92,122,.28);color:var(--bad)}
+.badge.warn{background:rgba(255,209,102,.10);border-color:rgba(255,209,102,.28);color:var(--warn)}
+
+.titleRow{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.titleRow .left{display:flex;align-items:center;gap:10px}
+.icon{
+  width:34px;height:34px;border-radius:12px;
+  display:grid;place-items:center;
+  background:rgba(110,231,255,.10);
+  border:1px solid rgba(110,231,255,.25);
+}
+.smallNote{color:var(--muted);font-size:12px;margin-top:4px}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width: 820px){ .grid2{grid-template-columns:1fr} }
+
+hr{border:0;border-top:1px solid rgba(255,255,255,.08);margin:16px 0}
+
+footer{text-align:center;color:#7f92a8;font-size:12px;margin-top:18px}
 </style>
 </head>
+
 <body>
 <div class="container">
+  <h1>🧾 Protokol</h1>
 
-<h1 style="text-align:center">Protokol</h1>
+  <div class="section">
+    <div class="titleRow">
+      <div class="left">
+        <div class="icon">⚡</div>
+        <div>
+          <h3 style="margin:0">Unos podataka</h3>
+          <div class="smallNote">Grupe • Aparati • EX2/EX3/EX4 software • Oprema • Server</div>
+        </div>
+      </div>
+      <span class="badge warn">🔴 Live</span>
+    </div>
 
-<div id="security" class="section">
-<h3>Security</h3>
-<label>Unesite kod:</label>
-<input type="text" id="secCode">
-<button onclick="checkSecurity()">Potvrdi</button>
+    <div class="btnRow" style="margin-top:12px">
+      <button onclick="addGroup()">➕ Dodaj grupu</button>
+      <button onclick="generateText()">📄 Generiraj tekst</button>
+    </div>
+  </div>
+
+  <div id="groups"></div>
+
+  <div class="section hidden" id="outBox">
+    <h3>📄 Generirani tekst</h3>
+    <textarea id="output" rows="25"></textarea>
+  </div>
+
+  <footer>verzija 13.1.26</footer>
 </div>
-
-<div id="mainApp" class="hidden">
-<div class="section">
-<button onclick="addGroup()">➕ Dodaj grupu aparata</button>
-<button onclick="generateText()">📄 Generiraj sav tekst</button>
-</div>
-
-<div id="uploadSection" class="section hidden">
-<label>Upload Excel baze</label>
-<input type="file" id="excelFile">
-</div>
-
-<div id="groups"></div>
-
-<div class="section hidden" id="outBox">
-<h3>Generirani tekst</h3>
-<textarea id="output" rows="25"></textarea>
-</div>
-</div>
-
-<footer>verzija 13.1.26</footer>
 
 <script>
-let isAdmin=false;
-let excelData={}; // Ovdje čuvamo podatke iz Excel-a
+/* ------------------------------
+   SERIJE + MODELI (dropdown)
+--------------------------------*/
+const seriesModels = {
+  "Premier": [
+    "EGT-VS5-4","EGT-VS6-4","EGT-VS8","EGT-VS9","EGT-VS9-1",
+    "EGT-VS10-1","EGT-VS10-2","EGT-VS11-1","EGT-VS12","EGT-VS13",
+    "EGT-VS14","EGT-VS15","EGT-VS16","EGT-VS17","EGT-VS18",
+    "EGT-VS19","EGT-VS20"
+  ],
+  "G-Series": [
+    "EGT-VS21","EGT-VS22","EGT-VS23","EGT-VS24","EGT-VS25",
+    "EGT-VS26","EGT-VS27","EGT-VS28","EGT-VS29","EGT-VS30",
+    "EGT-VS31","EGT-VS32","EGT-VS33","EGT-VS34","EGT-VS35",
+    "EGT-VS36","EGT-VS37"
+  ],
+  "Supreme": [
+    "EGT-VS40","EGT-VS41","EGT-VS42","EGT-VS43","EGT-VS44"
+  ]
+};
 
-function checkSecurity(){
-  const code=document.getElementById("secCode").value.trim();
-  if(code==="1"){
-    document.getElementById("mainApp").classList.remove("hidden");
-  } else if(code==="0456"){
-    document.getElementById("mainApp").classList.remove("hidden");
-    isAdmin=true;
-    document.getElementById("uploadSection").classList.remove("hidden");
-  } else {
-    alert("Neispravan kod!");
+/* ------------------------------
+   EX2: samo jedan dropdown (software)
+--------------------------------*/
+const ex2Software = [
+  "Multi3 4_424E",
+  "Multi4 3_326t",
+  "Multi5 4_409_e",
+  "Multi6 5_524_a_e",
+  "Multi 3 4_R6_431_e",
+  "Multi4 4_R6_414a_e",
+  "Multi5 6_R6_422_e",
+  "Multi6 6_R6_537_e",
+  "Multi2 cat4cash 3_2_90_e",
+  "Multi1 Egypt quest 2_3_92_e",
+  "Fgrh 2_157_mu_91"
+];
+
+/* ------------------------------
+   EX3 + EX4: kategorije + software (dropdown)
+--------------------------------*/
+const softwareData = {
+  "3": {
+    "COLLECTIONS": [
+      "E3_C_Fruits-2_R6.2_358",
+      "E3_C_Green_R5_353",
+      "E3_C_Orange_R5_354",
+      "E3_C_Purple_R5_357_P95",
+      "E3_C_Red_R5_353",
+      "E3_C_Union_R5_355",
+      "E3_C_Purple_R6.2_363",
+      "E3_C_Green_R6.2_358",
+      "E3_C_Red_R6.2_358",
+      "E3_C_Union_R6.2_358",
+      "E3_C_Orange_R6.2_360",
+      "E3_C_Gold_R7.2_410"
+    ],
+    "POWER": [
+      "E3_P_Purple_R8_413",
+      "E3_P_Green_R8_432",
+      "E3_P_Fruits_RB.8_417"
+    ],
+    "GENERAL": [
+      "E3_G_Red_R8_422",
+      "E3_G_Fruits_R8_415",
+      "E3_G_Green_R8_429",
+      "E3_G_Green_R8B.2_501"
+    ],
+    "BELL LINK": [
+      "E3_BL_BELL_LINK-1_R9B_520"
+    ]
+  },
+
+  "4": {
+    "BELL LINK": [
+      "E4_J_BL_BL1_H1_S1.1.1",
+      "E4_J_BL_BL1_H1_S1.1.3",
+      "E4_J_BL_0x_BL1_H1_S2.5.22",
+      "E4_J_BL_0x_BL2_H1_S1.1.10",
+      "E4_J_BL_0x_BL2_H1_S2.5.21",
+      "E4_J_BL_0x_BLB_H1_S1.5.10",
+      "E4_J_BL_0x_BLB_H1_S2.5.11",
+      "E4_J_BL_6x_BLB2_H1_S2.5.2"
+    ],
+    "Sheng Sheng": [
+      "E4_J_SSBX_BC_H1_S1.1.4",
+      "E4_S_G_BPRIZE_H1_S1.1.3",
+      "E4_J_SSBX_SSBX_H1_S1.1.3"
+    ],
+    "Supreme Combo": [
+      "E4_J_SCL_SCL_H1_S1.1.6"
+    ],
+    "Gods & Kings": [
+      "E4_J_GKL_GK_H1_S1.1.11",
+      "E4_J_GKL_0x_GK_H1_S1.1.18",
+      "E4_J_GKL_0x_GK_H1_S2.5.31"
+    ],
+    "SUPREME": [
+      "E4_S_SuS_MEGA_FRUITS_H1_S2.1.15",
+      "E4_S_SuS_GREEN_H1_S1.1.8",
+      "E4_S_SuS_GREEN_H1_S2.1.14",
+      "E4_S_SuS_RED_H1_S2.1.14"
+    ],
+    "POWER": [
+      "E4_M_P_BLUE_H1_S1.1.8",
+      "E4_M_P_BLUE_H1_S1.1.8_1M"
+    ],
+    "GENERAL": [
+      "E4_S_G_FRUITS_H1_S1.1.2",
+      "E4_S_G_GOLD_H1_S1.1.8",
+      "E4_S_G_GOLD_H1_S2.1.12",
+      "E4_S_G_GREEN_H1_S1.1.4",
+      "E4_S_G_GREEN_H1_S1.1.10",
+      "E4_S_G_GREEN_H1_S2.1.18",
+      "E4_S_G_RED_H1_S1.1.1",
+      "E4_S_G_RED_H1_S2.1.14",
+      "E4_S_G_BLUE_H1_S1.1.12",
+      "E4_S_G_BLUE_H1_S1.1.14",
+      "E4_S_G_BLUE_H1_S1.1.16",
+      "E4_S_G_BLUE_H1_S1.1.18",
+      "E4_S_G_BLUE_H1_S2.1.23"
+    ]
   }
+};
+
+/* ------------------------------
+   UI helper: badge za Da/Ne
+--------------------------------*/
+function updateStatusBadge(selectEl){
+  const label = selectEl.previousElementSibling;
+  const badge = label?.querySelector(".status");
+  if(!badge) return;
+  const isYes = selectEl.value === "Da";
+  badge.classList.toggle("good", isYes);
+  badge.classList.toggle("bad", !isYes);
+  badge.textContent = isYes ? "✅ Da" : "❌ Ne";
 }
 
-// ---------- Excel učitavanje ----------
-document.getElementById("excelFile")?.addEventListener("change", async(e)=>{
-  const file=e.target.files[0];
-  if(!file) return;
-  const data=await file.arrayBuffer();
-  const wb=XLSX.read(data,{type:"array"});
-  const ws=wb.Sheets[wb.SheetNames[0]];
-  const json=XLSX.utils.sheet_to_json(ws,{header:1});
-  parseExcel(json);
-});
-
-function parseExcel(json){
-  // Pretpostavljamo da je prvi red zaglavlje, ostalo su podaci
-  // Excel može imati kolone: Kategorija, Model, Exciter, Software, SoftwareCategory...
-  excelData={};
-  json.slice(1).forEach(row=>{
-    const cat=row[0], model=row[1];
-    if(!cat || !model) return;
-    if(!excelData[cat]) excelData[cat]=[];
-    excelData[cat].push(model);
-  });
-  alert("Excel učitan, dropdownovi će koristiti ove podatke!");
+/* show/hide helper za "Da/Ne" + dep box */
+function toggleDepBox(selectEl, depBoxSelector){
+  updateStatusBadge(selectEl);
+  const wrap = selectEl.closest(".group") || document;
+  const dep = wrap.querySelector(depBoxSelector);
+  if(!dep) return;
+  dep.classList.toggle("hidden", selectEl.value !== "Da");
 }
 
-// ---------- Dinamika grupa ----------
-let groupCount=0;
+/* Bill/Printer (tip + komada) */
+function toggleTwoDeps(selectEl, depClass){
+  updateStatusBadge(selectEl);
+  const group = selectEl.closest(".group");
+  const deps = group.querySelectorAll(depClass);
+  deps.forEach(d=>d.classList.toggle("hidden", selectEl.value !== "Da"));
+}
+
+/* Server block */
+function toggleServer(selectEl){
+  updateStatusBadge(selectEl);
+  const group = selectEl.closest(".group");
+  const serverBox = group.querySelector(".server");
+  serverBox.classList.toggle("hidden", selectEl.value !== "Da");
+}
+
+/* UCAS (na kraju servera) */
+function toggleUCAS(selectEl){
+  updateStatusBadge(selectEl);
+  const group = selectEl.closest(".group");
+  const ucasBox = group.querySelector(".ucasDep");
+  ucasBox.classList.toggle("hidden", selectEl.value !== "Da");
+}
+
+/* ------------------------------
+   GRUPE
+--------------------------------*/
+let groupCount = 0;
+
 function addGroup(){
   groupCount++;
-  const g=document.createElement("div");
-  g.className="group";
-  g.innerHTML=`
-  <h3>Grupa ${groupCount}</h3>
 
-  <label>Broj aparata</label>
-  <input type="number" min="1" onchange="renderAparati(this)">
+  const g = document.createElement("div");
+  g.className = "group";
+  g.innerHTML = `
+    <div class="titleRow">
+      <div class="left">
+        <div class="icon">🎰</div>
+        <div>
+          <h3 style="margin:0">Grupa ${groupCount}</h3>
+          <div class="smallNote">Serija + model su zajednički za cijelu grupu</div>
+        </div>
+      </div>
+      <span class="badge warn">🧩 Unos</span>
+    </div>
 
-  <label>Kategorija</label>
-  <select onchange="updateModels(this)">
-    <option value="">-- odaberi --</option>
-  </select>
+    <div class="grid2" style="margin-top:10px">
+      <div>
+        <label>🔢 Broj aparata</label>
+        <input type="number" min="1" onchange="renderAparati(this)">
+      </div>
 
-  <label>Model</label>
-  <select class="model"><option></option></select>
+      <div>
+        <label>📦 Serija aparata</label>
+        <select class="series" onchange="updateModels(this)">
+          <option value="">-- odaberi --</option>
+          <option value="Premier">Premier</option>
+          <option value="G-Series">G-Series</option>
+          <option value="Supreme">Supreme</option>
+        </select>
+      </div>
+    </div>
 
-  <div class="aparati"></div>
-
-  <hr>
-
-  <label>Bill Acceptor</label>
-  <select onchange="toggle(this)">
-    <option>Ne</option><option>Da</option>
-  </select>
-  <select class="hidden dep">
-    <option value="">MEI / JCM</option>
-    <option>MEI</option><option>JCM</option>
-  </select>
-  <input type="number" class="hidden dep" placeholder="Broj komada">
-
-  <label>Printer</label>
-  <select onchange="toggle(this)">
-    <option>Ne</option><option>Da</option>
-  </select>
-  <select class="hidden dep">
-    <option>Ithaca</option><option>Ithaca Edge</option><option>Gen2</option><option>Gen5</option>
-  </select>
-  <input type="number" class="hidden dep" placeholder="Broj komada">
-
-  <label>Server</label>
-  <select onchange="toggleServer(this)">
-    <option>Ne</option><option>Da</option>
-  </select>
-
-  <div class="server hidden">
-    <label>JPSN</label><input>
-    <label>Verzija (PPC)</label>
-    <select>
-      <option>PPC2_8_148</option>
-      <option>PPC2_10_189</option>
-      <option>PPC3_G2_13_332</option>
-      <option>PPC3_G3_13_361</option>
-      <option>PPC3_G3_14_372</option>
+    <label>🏷️ Model aparata</label>
+    <select class="model">
+      <option value="">-- odaberi model --</option>
     </select>
 
-    <h4>Mini</h4>
-    <input placeholder="Visible"><input placeholder="Hidden"><input placeholder="Min bet">
-    <h4>Mid</h4>
-    <input placeholder="Visible"><input placeholder="Hidden"><input placeholder="Min bet">
-    <h4>Super</h4>
-    <input placeholder="Visible"><input placeholder="Hidden"><input placeholder="Min bet">
-  </div>
+    <div class="aparati"></div>
+
+    <hr>
+
+    <h4>🧰 Oprema</h4>
+
+    <div class="grid2">
+      <div>
+        <label>💵 Bill Acceptor <span class="badge bad status">❌ Ne</span></label>
+        <select class="billYesNo" onchange="toggleTwoDeps(this,'.billDep')">
+          <option>Ne</option><option>Da</option>
+        </select>
+        <select class="hidden billDep billType">
+          <option value="">MEI / JCM</option>
+          <option>MEI</option><option>JCM</option>
+        </select>
+        <input type="number" class="hidden billDep billCount" placeholder="Broj komada">
+      </div>
+
+      <div>
+        <label>🖨️ Printer <span class="badge bad status">❌ Ne</span></label>
+        <select class="prnYesNo" onchange="toggleTwoDeps(this,'.prnDep')">
+          <option>Ne</option><option>Da</option>
+        </select>
+        <select class="hidden prnDep prnType">
+          <option>Ithaca</option><option>Ithaca Edge</option><option>Gen2</option><option>Gen5</option>
+        </select>
+        <input type="number" class="hidden prnDep prnCount" placeholder="Broj komada">
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div>
+        <label>🪑 Stolica <span class="badge bad status">❌ Ne</span></label>
+        <select class="stolYesNo" onchange="toggleDepBox(this,'.stolDep')">
+          <option>Ne</option><option>Da</option>
+        </select>
+        <div class="hidden stolDep">
+          <input class="stolText" placeholder="Upis (količina / opis / napomena)">
+        </div>
+      </div>
+
+      <div>
+        <label>🧱 Postolje <span class="badge bad status">❌ Ne</span></label>
+        <select class="postYesNo" onchange="toggleDepBox(this,'.postDep')">
+          <option>Ne</option><option>Da</option>
+        </select>
+        <div class="hidden postDep">
+          <input class="postText" placeholder="Upis (količina / opis / napomena)">
+        </div>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div>
+        <label>📺 Signage <span class="badge bad status">❌ Ne</span></label>
+        <select class="signYesNo" onchange="toggleDepBox(this,'.signDep')">
+          <option>Ne</option><option>Da</option>
+        </select>
+        <div class="hidden signDep">
+          <label style="margin-top:8px">Serijski broj</label>
+          <input class="signSN" placeholder="Serijski broj">
+          <label style="margin-top:8px">Medij</label>
+          <input class="signMedia" placeholder="Medij (slobodan unos)">
+        </div>
+      </div>
+
+      <div>
+        <label>🖧 Server <span class="badge bad status">❌ Ne</span></label>
+        <select class="srvYesNo" onchange="toggleServer(this)">
+          <option>Ne</option><option>Da</option>
+        </select>
+
+        <div class="server hidden">
+          <label>JPSN</label><input class="srvJpsn" placeholder="JPSN">
+          <label>Verzija (PPC)</label>
+          <select class="srvPpc">
+            <option>PPC2_8_148</option>
+            <option>PPC2_10_189</option>
+            <option>PPC3_G2_13_332</option>
+            <option>PPC3_G3_13_361</option>
+            <option>PPC3_G3_14_372</option>
+          </select>
+
+          <h4>Mini</h4>
+          <input class="miniV" placeholder="Visible">
+          <input class="miniH" placeholder="Hidden">
+          <input class="miniB" placeholder="Min bet">
+
+          <h4>Mid</h4>
+          <input class="midV" placeholder="Visible">
+          <input class="midH" placeholder="Hidden">
+          <input class="midB" placeholder="Min bet">
+
+          <h4>Super</h4>
+          <input class="supV" placeholder="Visible">
+          <input class="supH" placeholder="Hidden">
+          <input class="supB" placeholder="Min bet">
+
+          <hr>
+
+          <label>🛡️ UCAS <span class="badge bad status">❌ Ne</span></label>
+          <select class="ucasYesNo" onchange="toggleUCAS(this)">
+            <option>Ne</option><option>Da</option>
+          </select>
+          <div class="hidden ucasDep">
+            <input class="ucasText" placeholder="UCAS (slobodan unos / napomena)">
+          </div>
+        </div>
+      </div>
+    </div>
   `;
+
   document.getElementById("groups").appendChild(g);
 
-  // Popuni kategorije iz Excel-a ako postoji
-  const catSelect=g.querySelector("select");
-  const cats=Object.keys(excelData);
-  if(cats.length) cats.forEach(c=>{const o=document.createElement("option"); o.textContent=c; catSelect.appendChild(o);});
-  else catSelect.innerHTML+=`<option>Premier</option><option>G-Series</option><option>Supreme</option>`;
-}
-
-// ---------- Dinamika aparata ----------
-function renderAparati(inp){
-  const box=inp.parentElement.querySelector(".aparati");
-  box.innerHTML="";
-  for(let i=1;i<=inp.value;i++){
-    box.innerHTML+=`
-    <div class="apparow">
-      <h4>Aparat ${i}</h4>
-      <label>Serijski broj</label><input>
-      <label>Exciter</label><input>
-      <label>Exciter Software</label>
-      <select onchange="showSoftCat(this)">
-        <option value="">--</option>
-        <option value="3">3</option>
-        <option value="4">4</option>
-      </select>
-      <label class="hidden">Software kategorija</label>
-      <select class="hidden" onchange="showSoftList(this)">
-        <option>Collection</option><option>Power</option><option>General</option>
-      </select>
-      <label class="hidden">Software</label>
-      <select class="hidden"></select>
-    </div>`;
-  }
-}
-
-// ---------- Software ----------
-function showSoftCat(sel){
-  const row=sel.parentElement;
-  row.querySelectorAll("label,select").forEach(e=>{
-    if(e!==sel && (e.tagName==="LABEL" || e.tagName==="SELECT")) e.classList.add("hidden");
+  // init badge state (all Ne)
+  g.querySelectorAll('select').forEach(sel=>{
+    if(sel.value === "Ne" && sel.previousElementSibling?.querySelector(".status")){
+      updateStatusBadge(sel);
+    }
   });
-  row.querySelectorAll("label")[3].classList.remove("hidden");
-  row.querySelectorAll("select")[1].classList.remove("hidden");
-}
-function showSoftList(sel){
-  const row=sel.parentElement;
-  const exc=row.querySelectorAll("select")[0].value;
-  const list=row.querySelectorAll("select")[2];
-  list.innerHTML="";
-  (softwareData[exc]?.[sel.value]||[]).forEach(s=>{
-    const o=document.createElement("option"); o.textContent=s; list.appendChild(o);
-  });
-  row.querySelectorAll("label")[4].classList.remove("hidden");
-  list.classList.remove("hidden");
 }
 
-// ---------- Helpers ----------
 function updateModels(sel){
-  const m=sel.parentElement.querySelector(".model");
-  m.innerHTML="";
-  const cat=sel.value;
-  if(excelData[cat]){
-    excelData[cat].forEach(v=>{const o=document.createElement("option"); o.textContent=v; m.appendChild(o);});
+  const group = sel.closest(".group");
+  const modelSelect = group.querySelector(".model");
+  modelSelect.innerHTML = `<option value="">-- odaberi model --</option>`;
+  (seriesModels[sel.value] || []).forEach(m=>{
+    const o = document.createElement("option");
+    o.value = m;
+    o.textContent = m;
+    modelSelect.appendChild(o);
+  });
+}
+
+/* ------------------------------
+   APARATI
+--------------------------------*/
+function renderAparati(inp){
+  const group = inp.closest(".group");
+  const box = group.querySelector(".aparati");
+  box.innerHTML = "";
+
+  const n = Number(inp.value || 0);
+  for(let i=1;i<=n;i++){
+    box.innerHTML += `
+      <div class="apparow">
+        <h4>🧩 Aparat ${i}</h4>
+
+        <label>Serijski broj</label>
+        <input class="sn" placeholder="Serijski broj aparata">
+
+        <label>Broj excitera</label>
+        <input class="exno" placeholder="Broj excitera">
+
+        <label>⚙️ Exciter</label>
+        <select class="exSel" onchange="onExciterChange(this)">
+          <option value="">--</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+        </select>
+
+        <div class="exSoft hidden">
+          <h4 style="margin-top:10px">🧠 Software</h4>
+
+          <label class="softcat-label">Software kategorija</label>
+          <select class="softcat hidden" onchange="showSoftList(this)">
+            <option value="">-- odaberi --</option>
+          </select>
+
+          <label class="softlist-label hidden">Software</label>
+          <select class="softlist hidden">
+            <option value="">-- odaberi --</option>
+          </select>
+        </div>
+      </div>
+    `;
   }
 }
-function toggle(sel){
-  const deps=sel.parentElement.querySelectorAll(".dep");
-  deps.forEach(d=>d.classList.toggle("hidden",sel.value!=="Da"));
-}
-function toggleServer(sel){
-  sel.parentElement.querySelector(".server").classList.toggle("hidden",sel.value!=="Da");
-}
 
-// ---------- Output ----------
-function generateText(){
-  let t="";
-  document.querySelectorAll(".group").forEach((g,i)=>{
-    t+=`Grupa ${i+1}\n`;
-    g.querySelectorAll(".apparow").forEach((a,j)=>{
-      const i=a.querySelectorAll("input,select");
-      t+=`Aparat ${j+1}:\n`;
-      t+=`  Serijski broj: ${i[0].value}\n`;
-      t+=`  Exciter: ${i[1].value}\n`;
-      t+=`  Exciter Software: ${i[2].value}\n`;
-      if(i[3] && i[3].value) t+=`  Software kategorija: ${i[3].value}\n  Software: ${i[4].value}\n`;
+/* ------------------------------
+   EX2 / EX3 / EX4 LOGIKA (software)
+--------------------------------*/
+function onExciterChange(sel){
+  const row = sel.closest(".apparow");
+  const exc = (sel.value || "").trim();
+
+  const softBox  = row.querySelector(".exSoft");
+  const catLabel = row.querySelector(".softcat-label");
+  const catSel   = row.querySelector(".softcat");
+  const listLabel= row.querySelector(".softlist-label");
+  const listSel  = row.querySelector(".softlist");
+
+  // reset
+  softBox.classList.add("hidden");
+  catLabel.classList.add("hidden");
+  catSel.classList.add("hidden");
+  listLabel.classList.add("hidden");
+  listSel.classList.add("hidden");
+
+  catSel.innerHTML  = `<option value="">-- odaberi --</option>`;
+  listSel.innerHTML = `<option value="">-- odaberi --</option>`;
+  listLabel.textContent = "Software";
+
+  if(!exc) return;
+
+  softBox.classList.remove("hidden");
+
+  // EX2: samo jedan dropdown (softlist), bez kategorija
+  if(exc === "2"){
+    listLabel.classList.remove("hidden");
+    listSel.classList.remove("hidden");
+    ex2Software.forEach(s=>{
+      const o=document.createElement("option");
+      o.value=s; o.textContent=s;
+      listSel.appendChild(o);
     });
+    return;
+  }
 
-    // Oprema
-    g.querySelectorAll("select, input").forEach(el=>{
-      if(el.parentElement.classList.contains("apparow")) return;
-      if(el.previousElementSibling){
-        const lbl=el.previousElementSibling.textContent;
-        if(el.value && el.value!=="Ne") t+=`${lbl}: ${el.value}\n`;
+  // EX3/EX4: kategorija + software
+  if(exc === "3" || exc === "4"){
+    catLabel.classList.remove("hidden");
+    catSel.classList.remove("hidden");
+
+    Object.keys(softwareData[exc] || {}).forEach(k=>{
+      const o=document.createElement("option");
+      o.value=k; o.textContent=k;
+      catSel.appendChild(o);
+    });
+    return;
+  }
+}
+
+function showSoftList(catSel){
+  const row = catSel.closest(".apparow");
+  const exc = (row.querySelector(".exSel").value || "").trim();
+  const key = (catSel.value || "").trim();
+
+  const listLabel = row.querySelector(".softlist-label");
+  const listSel = row.querySelector(".softlist");
+
+  listSel.innerHTML = `<option value="">-- odaberi --</option>`;
+
+  const items = softwareData?.[exc]?.[key] || [];
+  items.forEach(s=>{
+    const o=document.createElement("option");
+    o.value=s; o.textContent=s;
+    listSel.appendChild(o);
+  });
+
+  const show = !!key;
+  listLabel.classList.toggle("hidden", !show);
+  listSel.classList.toggle("hidden", !show);
+}
+
+/* ------------------------------
+   OUTPUT
+--------------------------------*/
+function generateText(){
+  let t = "";
+
+  document.querySelectorAll(".group").forEach((g,gi)=>{
+    const series = g.querySelector(".series")?.value || "";
+    const model  = g.querySelector(".model")?.value || "";
+
+    t += `Grupa ${gi+1}\n`;
+    if(series) t += `Serija: ${series}\n`;
+    if(model)  t += `Model: ${model}\n`;
+
+    // Aparati
+    g.querySelectorAll(".apparow").forEach((a,ai)=>{
+      const sn   = a.querySelector(".sn")?.value || "";
+      const exno = a.querySelector(".exno")?.value || "";
+      const exc  = a.querySelector(".exSel")?.value || "";
+      const cat  = a.querySelector(".softcat")?.value || "";
+      const soft = a.querySelector(".softlist")?.value || "";
+
+      t += `Aparat ${ai+1}:\n`;
+      t += `  Serijski broj: ${sn}\n`;
+      t += `  Broj excitera: ${exno}\n`;
+      t += `  Exciter: ${exc}\n`;
+
+      if(exc === "2"){
+        if(soft) t += `  Software: ${soft}\n`;
+      } else if(exc === "3" || exc === "4"){
+        if(cat)  t += `  Software kategorija: ${cat}\n`;
+        if(soft) t += `  Software: ${soft}\n`;
       }
     });
 
-    // Server
-    if(g.querySelector(".server") && !g.querySelector(".server").classList.contains("hidden")){
-      t+="Server:\n";
-      g.querySelector(".server").querySelectorAll("input,select").forEach(el=>{
-        const lbl=el.previousElementSibling ? el.previousElementSibling.textContent : "";
-        if(lbl) t+=`${lbl}: ${el.value}\n`;
-      });
+    t += "\nOprema:\n";
+
+    // Bill Acceptor
+    const billYes = g.querySelector(".billYesNo")?.value || "Ne";
+    t += `Bill Acceptor: ${billYes}\n`;
+    if(billYes === "Da"){
+      const bt = g.querySelector(".billType")?.value || "";
+      const bc = g.querySelector(".billCount")?.value || "";
+      if(bt) t += `Tip: ${bt}\n`;
+      if(bc) t += `Komada: ${bc}\n`;
     }
 
-    t+="\n";
+    // Printer
+    const prnYes = g.querySelector(".prnYesNo")?.value || "Ne";
+    t += `Printer: ${prnYes}\n`;
+    if(prnYes === "Da"){
+      const pt = g.querySelector(".prnType")?.value || "";
+      const pc = g.querySelector(".prnCount")?.value || "";
+      if(pt) t += `Tip: ${pt}\n`;
+      if(pc) t += `Komada: ${pc}\n`;
+    }
+
+    // Stolica
+    const stolYes = g.querySelector(".stolYesNo")?.value || "Ne";
+    t += `Stolica: ${stolYes}\n`;
+    if(stolYes === "Da"){
+      const st = g.querySelector(".stolText")?.value || "";
+      if(st) t += `Napomena: ${st}\n`;
+    }
+
+    // Postolje
+    const postYes = g.querySelector(".postYesNo")?.value || "Ne";
+    t += `Postolje: ${postYes}\n`;
+    if(postYes === "Da"){
+      const ps = g.querySelector(".postText")?.value || "";
+      if(ps) t += `Napomena: ${ps}\n`;
+    }
+
+    // Signage
+    const signYes = g.querySelector(".signYesNo")?.value || "Ne";
+    t += `Signage: ${signYes}\n`;
+    if(signYes === "Da"){
+      const ssn = g.querySelector(".signSN")?.value || "";
+      const sm  = g.querySelector(".signMedia")?.value || "";
+      if(ssn) t += `Serijski broj: ${ssn}\n`;
+      if(sm)  t += `Medij: ${sm}\n`;
+    }
+
+    // Server + UCAS
+    const srvYes = g.querySelector(".srvYesNo")?.value || "Ne";
+    t += `Server: ${srvYes}\n`;
+    if(srvYes === "Da"){
+      t += "Server:\n";
+      const jpsn = g.querySelector(".srvJpsn")?.value || "";
+      const ppc  = g.querySelector(".srvPpc")?.value || "";
+      if(jpsn) t += `JPSN: ${jpsn}\n`;
+      if(ppc)  t += `Verzija (PPC): ${ppc}\n`;
+
+      t += "Mini:\n";
+      t += `  Visible: ${g.querySelector(".miniV")?.value || ""}\n`;
+      t += `  Hidden: ${g.querySelector(".miniH")?.value || ""}\n`;
+      t += `  Min bet: ${g.querySelector(".miniB")?.value || ""}\n`;
+
+      t += "Mid:\n";
+      t += `  Visible: ${g.querySelector(".midV")?.value || ""}\n`;
+      t += `  Hidden: ${g.querySelector(".midH")?.value || ""}\n`;
+      t += `  Min bet: ${g.querySelector(".midB")?.value || ""}\n`;
+
+      t += "Super:\n";
+      t += `  Visible: ${g.querySelector(".supV")?.value || ""}\n`;
+      t += `  Hidden: ${g.querySelector(".supH")?.value || ""}\n`;
+      t += `  Min bet: ${g.querySelector(".supB")?.value || ""}\n`;
+
+      const ucasYes = g.querySelector(".ucasYesNo")?.value || "Ne";
+      t += `UCAS: ${ucasYes}\n`;
+      if(ucasYes === "Da"){
+        const ut = g.querySelector(".ucasText")?.value || "";
+        if(ut) t += `Napomena: ${ut}\n`;
+      }
+    }
+
+    t += "\n\n";
   });
 
-  document.getElementById("output").value=t;
+  document.getElementById("output").value = t;
   document.getElementById("outBox").classList.remove("hidden");
 }
 </script>
