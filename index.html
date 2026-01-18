@@ -171,6 +171,10 @@ footer{text-align:center;color:#7f92a8;font-size:12px;margin-top:18px}
       <span class="badge warn">🔴 Live</span>
     </div>
 
+    <!-- LOKACIJA -->
+    <label style="margin-top:12px">📍 Lokacija</label>
+    <input id="locationInput" placeholder="npr. Multiigra Split">
+
     <div class="btnRow" style="margin-top:12px">
       <button onclick="addGroup()">➕ Dodaj grupu</button>
       <button onclick="generateText()">📄 Generiraj tekst</button>
@@ -178,6 +182,12 @@ footer{text-align:center;color:#7f92a8;font-size:12px;margin-top:18px}
       <button class="ghost" onclick="saveState()">💾 Spremi</button>
       <button class="ghost" onclick="loadState()">📂 Učitaj</button>
       <button class="danger" onclick="clearAll()">🧹 Očisti sve</button>
+    </div>
+
+    <!-- WHATSAPP TIPKE -->
+    <div class="btnRow" style="margin-top:10px">
+      <button class="ghost" onclick="sendWappUCAS()">📲 Wapp UCAS</button>
+      <button class="ghost" onclick="sendWappCodes()">📲 Wapp KODOVI</button>
     </div>
 
     <div class="smallNote" style="margin-top:10px">
@@ -427,7 +437,6 @@ function scheduleAutoSave(){
     try{
       const data = exportState();
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-      // bez toasta na svaku promjenu (da ne smeta)
     }catch(e){}
   }, 450);
 }
@@ -461,6 +470,7 @@ function clearAll(){
   if(!confirm("Očistiti sve grupe i tekst?")) return;
   document.getElementById("groups").innerHTML = "";
   document.getElementById("output").value = "";
+  document.getElementById("locationInput").value = "";
   document.getElementById("outBox").classList.add("hidden");
   groupCount = 0;
   localStorage.removeItem(STORAGE_KEY);
@@ -494,7 +504,7 @@ function addGroup(prefillData = null){
     <div class="grid2" style="margin-top:10px">
       <div>
         <label>🔢 Broj aparata</label>
-        <input class="apCount" type="number" min="0" onchange="renderAparati(this)">
+        <input class="apCount" type="number" min="1" onchange="renderAparati(this)">
       </div>
 
       <div>
@@ -518,6 +528,26 @@ function addGroup(prefillData = null){
     <hr>
 
     <h4>🧰 Oprema</h4>
+
+    <!-- TOPPER -->
+    <div class="grid2">
+      <div>
+        <label>🪧 Topper <span class="badge bad status">❌ Ne</span></label>
+        <select class="topYesNo" onchange="toggleDepBox(this,'.topDep')">
+          <option>Ne</option><option>Da</option>
+        </select>
+        <div class="hidden topDep">
+          <label style="margin-top:8px">Veličina (inch)</label>
+          <select class="topSize">
+            <option value="">-- odaberi --</option>
+            <option>18</option><option>24</option><option>27</option><option>32</option>
+          </select>
+          <label style="margin-top:8px">Broj komada</label>
+          <input type="number" class="topCount" placeholder="Komada">
+        </div>
+      </div>
+      <div></div>
+    </div>
 
     <div class="grid2">
       <div>
@@ -575,8 +605,8 @@ function addGroup(prefillData = null){
         <div class="hidden signDep">
           <label style="margin-top:8px">Serijski broj</label>
           <input class="signSN" placeholder="Serijski broj">
-          <label style="margin-top:8px">Medij</label>
-          <input class="signMedia" placeholder="Medij (slobodan unos)">
+          <label style="margin-top:8px">Media Controller</label>
+          <input class="signMedia" placeholder="Serijski broj Media Controller-a">
         </div>
       </div>
 
@@ -590,12 +620,14 @@ function addGroup(prefillData = null){
           <label>JPSN</label><input class="srvJpsn" placeholder="JPSN">
           <label>Verzija (PPC)</label>
           <select class="srvPpc">
+            <option value="">-- odaberi --</option>
             <option>PPC2_8_148</option>
             <option>PPC2_10_189</option>
             <option>PPC3_G2_13_332</option>
             <option>PPC3_G3_13_361</option>
             <option>PPC3_G3_14_372</option>
           </select>
+          <input class="srvPpcManual" placeholder="Ručno upiši verziju (ako nije na listi)">
 
           <h4>Mini</h4>
           <input class="miniV" placeholder="Visible">
@@ -619,7 +651,17 @@ function addGroup(prefillData = null){
             <option>Ne</option><option>Da</option>
           </select>
           <div class="hidden ucasDep">
-            <input class="ucasText" placeholder="UCAS (slobodan unos / napomena)">
+            <input class="ucasText" placeholder="UCAS serijski broj">
+          </div>
+
+          <hr>
+
+          <label>🎛️ Media Controller <span class="badge bad status">❌ Ne</span></label>
+          <select class="mcYesNo" onchange="toggleDepBox(this,'.mcDep')">
+            <option>Ne</option><option>Da</option>
+          </select>
+          <div class="hidden mcDep">
+            <input class="mcSn" placeholder="Serijski broj Media Controller-a">
           </div>
         </div>
       </div>
@@ -634,12 +676,11 @@ function addGroup(prefillData = null){
 
   document.getElementById("groups").appendChild(g);
 
-  // init badges to "Ne"
+  // init badges
   g.querySelectorAll('select').forEach(sel=>{
     if(sel.previousElementSibling?.querySelector(".status")) updateStatusBadge(sel);
   });
 
-  // optional prefill
   if(prefillData) applyGroupData(g, prefillData);
 
   reindexGroups();
@@ -889,6 +930,8 @@ function exportState(){
   const groups = [...document.querySelectorAll(".group")];
   return {
     version: "13.1.26",
+    location: document.getElementById("locationInput")?.value || "",
+    output: document.getElementById("output")?.value || "",
     groups: groups.map(g => collectGroupData(g))
   };
 }
@@ -897,11 +940,12 @@ function importState(state){
   document.getElementById("groups").innerHTML = "";
   groupCount = 0;
 
+  document.getElementById("locationInput").value = state?.location || "";
+  document.getElementById("output").value = state?.output || "";
+  document.getElementById("outBox").classList.toggle("hidden", !(state?.output || "").trim());
+
   const groups = Array.isArray(state?.groups) ? state.groups : [];
   groups.forEach(gd => addGroup(gd));
-
-  const out = document.getElementById("output");
-  if(out.value.trim()) document.getElementById("outBox").classList.remove("hidden");
 }
 
 function collectGroupData(g){
@@ -910,6 +954,10 @@ function collectGroupData(g){
     apCount: g.querySelector(".apCount")?.value || "",
     series: g.querySelector(".series")?.value || "",
     model: g.querySelector(".model")?.value || "",
+
+    topYes: g.querySelector(".topYesNo")?.value || "Ne",
+    topSize: g.querySelector(".topSize")?.value || "",
+    topCount: g.querySelector(".topCount")?.value || "",
 
     billYes: g.querySelector(".billYesNo")?.value || "Ne",
     billType: g.querySelector(".billType")?.value || "",
@@ -932,6 +980,8 @@ function collectGroupData(g){
     srvYes: g.querySelector(".srvYesNo")?.value || "Ne",
     srvJpsn: g.querySelector(".srvJpsn")?.value || "",
     srvPpc: g.querySelector(".srvPpc")?.value || "",
+    srvPpcManual: g.querySelector(".srvPpcManual")?.value || "",
+
     miniV: g.querySelector(".miniV")?.value || "",
     miniH: g.querySelector(".miniH")?.value || "",
     miniB: g.querySelector(".miniB")?.value || "",
@@ -944,6 +994,9 @@ function collectGroupData(g){
 
     ucasYes: g.querySelector(".ucasYesNo")?.value || "Ne",
     ucasText: g.querySelector(".ucasText")?.value || "",
+
+    mcYes: g.querySelector(".mcYesNo")?.value || "Ne",
+    mcSn: g.querySelector(".mcSn")?.value || "",
 
     codesNote: g.querySelector(".codesNote")?.value || "",
 
@@ -970,6 +1023,11 @@ function applyGroupData(g, d){
   renderAparati(g.querySelector(".apCount"), d.aparati || []);
 
   const setYesNo = (sel, val) => { sel.value = val || "Ne"; updateStatusBadge(sel); };
+
+  setYesNo(g.querySelector(".topYesNo"), d.topYes);
+  toggleDepBox(g.querySelector(".topYesNo"), ".topDep");
+  g.querySelector(".topSize").value = d.topSize || "";
+  g.querySelector(".topCount").value = d.topCount || "";
 
   setYesNo(g.querySelector(".billYesNo"), d.billYes);
   toggleTwoDeps(g.querySelector(".billYesNo"), ".billDep");
@@ -998,6 +1056,8 @@ function applyGroupData(g, d){
   toggleServer(g.querySelector(".srvYesNo"));
   g.querySelector(".srvJpsn").value = d.srvJpsn || "";
   g.querySelector(".srvPpc").value = d.srvPpc || "";
+  g.querySelector(".srvPpcManual").value = d.srvPpcManual || "";
+
   g.querySelector(".miniV").value = d.miniV || "";
   g.querySelector(".miniH").value = d.miniH || "";
   g.querySelector(".miniB").value = d.miniB || "";
@@ -1011,6 +1071,10 @@ function applyGroupData(g, d){
   setYesNo(g.querySelector(".ucasYesNo"), d.ucasYes);
   toggleUCAS(g.querySelector(".ucasYesNo"));
   g.querySelector(".ucasText").value = d.ucasText || "";
+
+  setYesNo(g.querySelector(".mcYesNo"), d.mcYes);
+  toggleDepBox(g.querySelector(".mcYesNo"), ".mcDep");
+  g.querySelector(".mcSn").value = d.mcSn || "";
 
   g.querySelector(".codesNote").value = d.codesNote || "";
 
@@ -1040,21 +1104,25 @@ function applyAparatData(row, d){
 function generateText(){
   clearInvalid();
 
+  const locEl = document.getElementById("locationInput");
   const groups = [...document.querySelectorAll(".group")];
+
+  let firstInvalid = null;
+  let errCount = 0;
+
+  if(!reqValue(locEl)){ markInvalid(locEl); firstInvalid ||= locEl; errCount++; }
+
   if(groups.length === 0){
     toast("Nema grupa", "Dodaj barem jednu grupu.", "warn");
     return;
   }
-
-  let firstInvalid = null;
-  let errCount = 0;
 
   groups.forEach((g)=>{
     const seriesEl = g.querySelector(".series");
     const modelEl = g.querySelector(".model");
     const apCountEl = g.querySelector(".apCount");
 
-    if(!reqValue(apCountEl)){ markInvalid(apCountEl); firstInvalid ||= apCountEl; errCount++; }
+    if(!reqValue(apCountEl) || Number(apCountEl.value) < 1){ markInvalid(apCountEl); firstInvalid ||= apCountEl; errCount++; }
     if(!reqValue(seriesEl)){ markInvalid(seriesEl); firstInvalid ||= seriesEl; errCount++; }
     if(!reqValue(modelEl)){ markInvalid(modelEl); firstInvalid ||= modelEl; errCount++; }
 
@@ -1078,6 +1146,14 @@ function generateText(){
         if(!reqValue(soft)){ markInvalid(soft); firstInvalid ||= soft; errCount++; }
       }
     });
+
+    const topYes = g.querySelector(".topYesNo")?.value || "Ne";
+    if(topYes === "Da"){
+      const ts = g.querySelector(".topSize");
+      const tc = g.querySelector(".topCount");
+      if(!reqValue(ts)){ markInvalid(ts); firstInvalid ||= ts; errCount++; }
+      if(!reqValue(tc)){ markInvalid(tc); firstInvalid ||= tc; errCount++; }
+    }
 
     const billYes = g.querySelector(".billYesNo")?.value || "Ne";
     if(billYes === "Da"){
@@ -1125,6 +1201,12 @@ function generateText(){
         const ut = g.querySelector(".ucasText");
         if(!reqValue(ut)){ markInvalid(ut); firstInvalid ||= ut; errCount++; }
       }
+
+      const mcYes = g.querySelector(".mcYesNo")?.value || "Ne";
+      if(mcYes === "Da"){
+        const mcsn = g.querySelector(".mcSn");
+        if(!reqValue(mcsn)){ markInvalid(mcsn); firstInvalid ||= mcsn; errCount++; }
+      }
     }
   });
 
@@ -1134,7 +1216,11 @@ function generateText(){
     return;
   }
 
+  const location = (locEl.value || "").trim();
   let t = "";
+  t += `LOKACIJA: ${location}\n`;
+  t += `========================================\n\n`;
+
   groups.forEach((g,gi)=>{
     const series = g.querySelector(".series")?.value || "";
     const model  = g.querySelector(".model")?.value || "";
@@ -1166,6 +1252,13 @@ function generateText(){
 
     t += "Oprema:\n";
 
+    const topYes = g.querySelector(".topYesNo")?.value || "Ne";
+    t += `Topper: ${topYes}\n`;
+    if(topYes === "Da"){
+      t += `Veličina: ${g.querySelector(".topSize")?.value || ""} inch\n`;
+      t += `Komada: ${g.querySelector(".topCount")?.value || ""}\n`;
+    }
+
     const billYes = g.querySelector(".billYesNo")?.value || "Ne";
     t += `Bill Acceptor: ${billYes}\n`;
     if(billYes === "Da"){
@@ -1196,7 +1289,7 @@ function generateText(){
     t += `Signage: ${signYes}\n`;
     if(signYes === "Da"){
       t += `Serijski broj: ${g.querySelector(".signSN")?.value || ""}\n`;
-      t += `Medij: ${g.querySelector(".signMedia")?.value || ""}\n`;
+      t += `Media Controller (SN): ${g.querySelector(".signMedia")?.value || ""}\n`;
     }
 
     const srvYes = g.querySelector(".srvYesNo")?.value || "Ne";
@@ -1204,27 +1297,52 @@ function generateText(){
     if(srvYes === "Da"){
       t += "Server:\n";
       t += `JPSN: ${g.querySelector(".srvJpsn")?.value || ""}\n`;
-      t += `Verzija (PPC): ${g.querySelector(".srvPpc")?.value || ""}\n`;
 
-      t += "Mini:\n";
-      t += `  Visible: ${g.querySelector(".miniV")?.value || ""}\n`;
-      t += `  Hidden: ${g.querySelector(".miniH")?.value || ""}\n`;
-      t += `  Min bet: ${g.querySelector(".miniB")?.value || ""}\n`;
+      const ppcManual = (g.querySelector(".srvPpcManual")?.value || "").trim();
+      const ppcSelect = g.querySelector(".srvPpc")?.value || "";
+      t += `Verzija (PPC): ${ppcManual || ppcSelect}\n`;
 
-      t += "Mid:\n";
-      t += `  Visible: ${g.querySelector(".midV")?.value || ""}\n`;
-      t += `  Hidden: ${g.querySelector(".midH")?.value || ""}\n`;
-      t += `  Min bet: ${g.querySelector(".midB")?.value || ""}\n`;
+      // Mini/Mid/Super - samo ako ima nešto
+      const miniV = g.querySelector(".miniV")?.value || "";
+      const miniH = g.querySelector(".miniH")?.value || "";
+      const miniB = g.querySelector(".miniB")?.value || "";
+      if(miniV || miniH || miniB){
+        t += "Mini:\n";
+        t += `  Visible: ${miniV}\n`;
+        t += `  Hidden: ${miniH}\n`;
+        t += `  Min bet: ${miniB}\n`;
+      }
 
-      t += "Super:\n";
-      t += `  Visible: ${g.querySelector(".supV")?.value || ""}\n`;
-      t += `  Hidden: ${g.querySelector(".supH")?.value || ""}\n`;
-      t += `  Min bet: ${g.querySelector(".supB")?.value || ""}\n`;
+      const midV = g.querySelector(".midV")?.value || "";
+      const midH = g.querySelector(".midH")?.value || "";
+      const midB = g.querySelector(".midB")?.value || "";
+      if(midV || midH || midB){
+        t += "Mid:\n";
+        t += `  Visible: ${midV}\n`;
+        t += `  Hidden: ${midH}\n`;
+        t += `  Min bet: ${midB}\n`;
+      }
+
+      const supV = g.querySelector(".supV")?.value || "";
+      const supH = g.querySelector(".supH")?.value || "";
+      const supB = g.querySelector(".supB")?.value || "";
+      if(supV || supH || supB){
+        t += "Super:\n";
+        t += `  Visible: ${supV}\n`;
+        t += `  Hidden: ${supH}\n`;
+        t += `  Min bet: ${supB}\n`;
+      }
 
       const ucasYes = g.querySelector(".ucasYesNo")?.value || "Ne";
       t += `UCAS: ${ucasYes}\n`;
       if(ucasYes === "Da"){
-        t += `Napomena: ${g.querySelector(".ucasText")?.value || ""}\n`;
+        t += `Serijski broj: ${g.querySelector(".ucasText")?.value || ""}\n`;
+      }
+
+      const mcYes = g.querySelector(".mcYesNo")?.value || "Ne";
+      t += `Media Controller: ${mcYes}\n`;
+      if(mcYes === "Da"){
+        t += `Serijski broj: ${g.querySelector(".mcSn")?.value || ""}\n`;
       }
     }
 
@@ -1237,24 +1355,91 @@ function generateText(){
 
   document.getElementById("output").value = t.trim();
   document.getElementById("outBox").classList.remove("hidden");
+  scheduleAutoSave(); // da se spremi output
   toast("Tekst generiran", "Možeš ga kopirati s “Kopiraj tekst”.", "good");
 }
 
 /* ------------------------------
-   Obriši grupu helper
+   WhatsApp
 --------------------------------*/
-function deleteGroup(btn){
-  const g = btn.closest(".group");
-  if(!g) return;
-  g.remove();
-  reindexGroups();
-  scheduleAutoSave();
-  toast("Grupa obrisana", "", "good");
+function openWapp(phoneDigits, msg){
+  window.open(`https://wa.me/${phoneDigits}?text=${encodeURIComponent(msg)}`, "_blank", "noopener,noreferrer");
+}
+
+// UCAS -> 0916199031 (385916199031), samo grupe sa Server=Da i UCAS=Da
+function sendWappUCAS(){
+  clearInvalid();
+  const locEl = document.getElementById("locationInput");
+  if(!reqValue(locEl)){
+    markInvalid(locEl);
+    toast("Nedostaje lokacija", "Upiši lokaciju prije slanja.", "bad");
+    locEl.scrollIntoView({behavior:"smooth", block:"center"});
+    return;
+  }
+  const location = locEl.value.trim();
+
+  const groups = [...document.querySelectorAll(".group")];
+  let lines = [`LOKACIJA: ${location}`, ""];
+  let found = 0;
+
+  groups.forEach((g, gi)=>{
+    const srvYes = g.querySelector(".srvYesNo")?.value || "Ne";
+    if(srvYes !== "Da") return;
+    const ucasYes = g.querySelector(".ucasYesNo")?.value || "Ne";
+    if(ucasYes !== "Da") return;
+
+    found++;
+    lines.push(
+      `Grupa ${gi+1}`,
+      `Serija: ${g.querySelector(".series")?.value || ""}`,
+      `Model: ${g.querySelector(".model")?.value || ""}`,
+      `JPSN: ${g.querySelector(".srvJpsn")?.value || ""}`,
+      `UCAS serijski broj: ${g.querySelector(".ucasText")?.value || ""}`,
+      ""
+    );
+  });
+
+  if(!found){
+    toast("Nema UCAS podataka", "Nijedna grupa nema Server=Da i UCAS=Da.", "warn");
+    return;
+  }
+
+  openWapp("385916199031", lines.join("\n").trim());
+}
+
+// KODOVI -> wa.me/?text (ti odabereš grupu EGT KODOVI)
+function sendWappCodes(){
+  clearInvalid();
+  const locEl = document.getElementById("locationInput");
+  if(!reqValue(locEl)){
+    markInvalid(locEl);
+    toast("Nedostaje lokacija", "Upiši lokaciju prije slanja.", "bad");
+    locEl.scrollIntoView({behavior:"smooth", block:"center"});
+    return;
+  }
+  const location = locEl.value.trim();
+
+  const groups = [...document.querySelectorAll(".group")];
+  let lines = ["EGT KODOVI", `LOKACIJA: ${location}`, ""];
+  let found = 0;
+
+  groups.forEach((g, gi)=>{
+    const codes = (g.querySelector(".codesNote")?.value || "").trim();
+    if(!codes) return;
+    found++;
+    lines.push(`Grupa ${gi+1} - KODOVI:`, codes, "");
+  });
+
+  if(!found){
+    toast("Nema KODOVA", "Nijedna grupa nema upisane kodove.", "warn");
+    return;
+  }
+
+  window.open(`https://wa.me/?text=${encodeURIComponent(lines.join("\n").trim())}`, "_blank", "noopener,noreferrer");
 }
 
 /* ------------------------------
    AUTO-SAVE: globalni listener
-   (hvata sve input/select/textarea promjene)
 --------------------------------*/
 document.addEventListener("input", (e)=>{
   const tag = (e.target?.tagName || "").toLowerCase();
